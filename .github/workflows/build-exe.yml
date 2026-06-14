@@ -29,7 +29,7 @@ jobs:
         # --windowed: Hide the black command prompt terminal
         # --add-data: Bundle your font into the folder
         # Notice: --onefile is removed
-        pyinstaller --noconfirm --windowed --add-data "Roboto-Regular.ttf;." --name "MitelSetupStudio" main.py
+        pyinstaller --noconfirm --windowed --add-data "Museo-500.ttf;." --name "MitelSetupStudio" main.py
 
     - name: Zip the Application Folder
       run: |

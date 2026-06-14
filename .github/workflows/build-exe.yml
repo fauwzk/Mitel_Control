@@ -1,13 +1,17 @@
-name: Build Mitel Studio Release
+name: Build and Release Mitel Studio
 
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch: 
+    branches: [ main, master ] # Builds normally on every commit
+    tags:
+      - 'v*' # Creates an official Release only when you push a tag starting with 'v' (like v1.0.0)
+  workflow_dispatch: # Still allows you to trigger it manually
 
 jobs:
-  build-windows:
+  build-and-release:
     runs-on: windows-latest
+    permissions:
+      contents: write # IMPORTANT: Gives the bot permission to create a Release page
 
     steps:
     - name: Checkout repository
@@ -25,20 +29,22 @@ jobs:
 
     - name: Build App with PyInstaller (Directory Mode)
       run: |
-        # --noconfirm: Overwrite existing build folders
-        # --windowed: Hide the black command prompt terminal
-        # --add-data: Bundle your font into the folder
-        # Notice: --onefile is removed
         pyinstaller --noconfirm --windowed --add-data "Museo-500.ttf;." --name "MitelSetupStudio" main.py
 
     - name: Zip the Application Folder
       run: |
-        # PyInstaller creates the folder inside the 'dist' directory.
-        # This PowerShell command zips that entire folder.
         Compress-Archive -Path dist/MitelSetupStudio -DestinationPath MitelSetupStudio-Windows.zip
 
-    - name: Upload ZIP Artifact
+    - name: Upload ZIP Artifact (Standard Download)
       uses: actions/upload-artifact@v4
       with:
         name: MitelSetupStudio-Release
         path: MitelSetupStudio-Windows.zip
+
+    - name: Publish Official GitHub Release
+      # This step ONLY runs if the push was a version tag (e.g., v1.1)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: MitelSetupStudio-Windows.zip
+        generate_release_notes: true # Automatically lists the commits/changes in this version

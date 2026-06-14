@@ -236,10 +236,37 @@ class MitelStudioApp:
                     if ':' in line:
                         key, val = line.split(':', 1)
                         parsed_data[key.strip()] = val.strip()
+
+            # --- START AUTO-DETECT LOGIC ---
+            detected_model = None
+            for key in parsed_data.keys():
+                # If it has softkeys, it's the larger screen 6867i
+                if key.startswith("softkey") or key.startswith("topsoftkey"):
+                    detected_model = "6867i"
+                    break
+                # If it uses Programmable Hard Keys, it's the 6863i
+                elif key.startswith("pnhkeypad"):
+                    detected_model = "6863i"
+                    break
+            
+            # If a model was detected, update the UI and load the correct schema
+            if detected_model and detected_model in self.available_models:
+                dpg.set_value("model_combo", detected_model)
+                with open(f"{MODEL_DIR}/{detected_model}.json", "r") as schema_file:
+                    self.current_schema = json.load(schema_file)
+            # --- END AUTO-DETECT LOGIC ---
+
+            # Build the form using the newly selected schema and populate the data
             self.build_dynamic_form(loaded_data=parsed_data)
+            
             self.current_filename = os.path.basename(filepath)
             dpg.set_value("current_file_input", self.current_filename)
-            dpg.set_value("status_text", f"Loaded File: {self.current_filename}")
+            
+            if detected_model:
+                dpg.set_value("status_text", f"Loaded File. Auto-detected model: {detected_model}")
+            else:
+                dpg.set_value("status_text", f"Loaded {self.current_filename} (Generic Mode)")
+                
         except Exception as e:
             dpg.set_value("status_text", f"Parsing Failure: {e}")
 

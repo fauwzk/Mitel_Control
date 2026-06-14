@@ -1,52 +1,810 @@
 {
     "model": "6867i",
-    "description": "Mitel 6867i SIP Phone",
+    "description": "Mitel 6867i Configuration",
     "settings": [
         {
-            "key": "sip line1 screen name",
-            "label": "Line 1 Screen Name",
+            "key": "background image",
+            "label": "Wallpaper Filename (.png/.jpg)",
             "type": "string"
         },
         {
-            "key": "sip line1 auth name",
-            "label": "Line 1 Auth Name",
+            "key": "background image display mode",
+            "label": "Wallpaper Scaling (0=Centered, 1=Stretched)",
+            "type": "choice",
+            "options": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "key": "screen saver background",
+            "label": "Screensaver Image File (.jpg)",
+            "type": "string"
+        },
+        {
+            "key": "screen saver wait time",
+            "label": "Screensaver Timeout (Seconds, default 300)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey1 type",
+            "label": "Top Key 1 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey1 label",
+            "label": "Top Key 1 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey1 value",
+            "label": "Top Key 1 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey2 type",
+            "label": "Top Key 2 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey2 label",
+            "label": "Top Key 2 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey2 value",
+            "label": "Top Key 2 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey3 type",
+            "label": "Top Key 3 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey3 label",
+            "label": "Top Key 3 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey3 value",
+            "label": "Top Key 3 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey4 type",
+            "label": "Top Key 4 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey4 label",
+            "label": "Top Key 4 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey4 value",
+            "label": "Top Key 4 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey5 type",
+            "label": "Top Key 5 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey5 label",
+            "label": "Top Key 5 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey5 value",
+            "label": "Top Key 5 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey6 type",
+            "label": "Top Key 6 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey6 label",
+            "label": "Top Key 6 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey6 value",
+            "label": "Top Key 6 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey7 type",
+            "label": "Top Key 7 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey7 label",
+            "label": "Top Key 7 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey7 value",
+            "label": "Top Key 7 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey8 type",
+            "label": "Top Key 8 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey8 label",
+            "label": "Top Key 8 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey8 value",
+            "label": "Top Key 8 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey9 type",
+            "label": "Top Key 9 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey9 label",
+            "label": "Top Key 9 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey9 value",
+            "label": "Top Key 9 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey10 type",
+            "label": "Top Key 10 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "topsoftkey10 label",
+            "label": "Top Key 10 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "topsoftkey10 value",
+            "label": "Top Key 10 Value (Prepend + Dest)",
             "type": "string"
         },
         {
             "key": "softkey1 type",
-            "label": "Softkey 1 Type",
+            "label": "Key 1 Type",
             "type": "choice",
             "options": [
                 "none",
+                "pickup",
                 "speeddial",
                 "blf",
-                "xml"
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
             ]
         },
         {
-            "key": "softkey1 value",
-            "label": "Softkey 1 Value",
+            "key": "softkey1 label",
+            "label": "Key 1 Display Label",
             "type": "string"
         },
         {
-            "key": "prgkey1 type",
-            "label": "Prog Key 1 Type",
+            "key": "softkey1 value",
+            "label": "Key 1 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey2 type",
+            "label": "Key 2 Type",
             "type": "choice",
             "options": [
                 "none",
+                "pickup",
                 "speeddial",
-                "blf"
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
             ]
         },
         {
-            "key": "topsoftkey1 type",
-            "label": "Top Softkey 1",
+            "key": "softkey2 label",
+            "label": "Key 2 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey2 value",
+            "label": "Key 2 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey3 type",
+            "label": "Key 3 Type",
             "type": "choice",
             "options": [
                 "none",
+                "pickup",
                 "speeddial",
-                "blf"
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
             ]
+        },
+        {
+            "key": "softkey3 label",
+            "label": "Key 3 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey3 value",
+            "label": "Key 3 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey4 type",
+            "label": "Key 4 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey4 label",
+            "label": "Key 4 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey4 value",
+            "label": "Key 4 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey5 type",
+            "label": "Key 5 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey5 label",
+            "label": "Key 5 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey5 value",
+            "label": "Key 5 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey6 type",
+            "label": "Key 6 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey6 label",
+            "label": "Key 6 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey6 value",
+            "label": "Key 6 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey7 type",
+            "label": "Key 7 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey7 label",
+            "label": "Key 7 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey7 value",
+            "label": "Key 7 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey8 type",
+            "label": "Key 8 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey8 label",
+            "label": "Key 8 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey8 value",
+            "label": "Key 8 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey9 type",
+            "label": "Key 9 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey9 label",
+            "label": "Key 9 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey9 value",
+            "label": "Key 9 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey10 type",
+            "label": "Key 10 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey10 label",
+            "label": "Key 10 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey10 value",
+            "label": "Key 10 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey11 type",
+            "label": "Key 11 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey11 label",
+            "label": "Key 11 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey11 value",
+            "label": "Key 11 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey12 type",
+            "label": "Key 12 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey12 label",
+            "label": "Key 12 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey12 value",
+            "label": "Key 12 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey13 type",
+            "label": "Key 13 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey13 label",
+            "label": "Key 13 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey13 value",
+            "label": "Key 13 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey14 type",
+            "label": "Key 14 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey14 label",
+            "label": "Key 14 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey14 value",
+            "label": "Key 14 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey15 type",
+            "label": "Key 15 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey15 label",
+            "label": "Key 15 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey15 value",
+            "label": "Key 15 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey16 type",
+            "label": "Key 16 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey16 label",
+            "label": "Key 16 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey16 value",
+            "label": "Key 16 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey17 type",
+            "label": "Key 17 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey17 label",
+            "label": "Key 17 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey17 value",
+            "label": "Key 17 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey18 type",
+            "label": "Key 18 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey18 label",
+            "label": "Key 18 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey18 value",
+            "label": "Key 18 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey19 type",
+            "label": "Key 19 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey19 label",
+            "label": "Key 19 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey19 value",
+            "label": "Key 19 Value (Prepend + Dest)",
+            "type": "string"
+        },
+        {
+            "key": "softkey20 type",
+            "label": "Key 20 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "softkey20 label",
+            "label": "Key 20 Display Label",
+            "type": "string"
+        },
+        {
+            "key": "softkey20 value",
+            "label": "Key 20 Value (Prepend + Dest)",
+            "type": "string"
         }
     ]
 }

@@ -1,10 +1,10 @@
 {
     "model": "generic",
-    "description": "Global Settings & SIP Stack",
+    "description": "Global SIP & Network Settings",
     "settings": [
         {
             "key": "dhcp",
-            "label": "DHCP Enabled",
+            "label": "DHCP (1=On, 0=Off)",
             "type": "choice",
             "options": [
                 "1",
@@ -13,79 +13,143 @@
         },
         {
             "key": "tftp server",
-            "label": "Configuration Server IP",
+            "label": "TFTP Server IP Address",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 screen name",
+            "label": "Screen Label (Line 1)",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 auth name",
+            "label": "SIP Auth Name / Extension",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 password",
+            "label": "SIP Auth Password",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 user name",
+            "label": "SIP User Name (Display)",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 proxy ip",
+            "label": "SIP Proxy / PBX IP",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 proxy port",
+            "label": "SIP Proxy Port (Default 5060)",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 registrar ip",
+            "label": "Registrar / Server IP",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 registrar port",
+            "label": "Registrar Port (Default 5060)",
+            "type": "string"
+        },
+        {
+            "key": "aastra md5",
+            "label": "Aastra MD5 Config Hash",
+            "type": "string"
+        },
+        {
+            "key": "mac md5",
+            "label": "MAC Config MD5 Hash",
             "type": "string"
         },
         {
             "key": "time server1",
-            "label": "Primary NTP Server",
+            "label": "NTP Time Server (fr.pool.ntp.org)",
             "type": "string"
         },
         {
-            "key": "time server2",
-            "label": "Secondary NTP Server",
-            "type": "string"
+            "key": "date format",
+            "label": "Date Format (0=YYYYMMDD, 1=DDMMYYYY, 2=MMDDYYYY, 3=DDMMYY)",
+            "type": "choice",
+            "options": [
+                "0",
+                "1",
+                "2",
+                "3"
+            ]
+        },
+        {
+            "key": "time format",
+            "label": "Time Format (1=24H, 0=12H)",
+            "type": "choice",
+            "options": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "key": "contact rcs",
+            "label": "Contact RCS (0=Off, 1=On)",
+            "type": "choice",
+            "options": [
+                "0",
+                "1"
+            ]
         },
         {
             "key": "time zone name",
-            "label": "Time Zone String",
+            "label": "Time Zone String (e.g., CET-1CEST,M3.5.0,M10.5.0)",
             "type": "string"
-        },
-        {
-            "key": "sip proxy ip",
-            "label": "SIP Proxy (FreePBX)",
-            "type": "string"
-        },
-        {
-            "key": "sip proxy port",
-            "label": "SIP Proxy Port",
-            "type": "string"
-        },
-        {
-            "key": "sip registrar ip",
-            "label": "SIP Registrar IP",
-            "type": "string"
-        },
-        {
-            "key": "directed call pickup",
-            "label": "Directed Call Pickup",
-            "type": "choice",
-            "options": [
-                "1",
-                "0"
-            ]
-        },
-        {
-            "key": "blf pickup prefix",
-            "label": "BLF Pickup Code (FreePBX)",
-            "type": "string"
-        },
-        {
-            "key": "lldp",
-            "label": "LLDP Execution",
-            "type": "choice",
-            "options": [
-                "1",
-                "0"
-            ]
         },
         {
             "key": "language 1",
-            "label": "Language File Map 1",
+            "label": "Phone Language file (e.g., French)",
+            "type": "string"
+        },
+        {
+            "key": "language 2",
+            "label": "Phone Language file (e.g., Spanish)",
+            "type": "string"
+        },
+        {
+            "key": "language 3",
+            "label": "Phone Language file (e.g., German)",
             "type": "string"
         },
         {
             "key": "language",
-            "label": "Active Phone Language",
+            "label": "number of languages (1-3)",
             "type": "choice",
             "options": [
                 "1",
-                "0"
+                "2",
+                "3"
             ]
         },
         {
-            "key": "webpage language",
-            "label": "Active Web UI Language",
+            "key": "tone set",
+            "label": "Region Tone (e.g., France, USA)",
+            "type": "string"
+        },
+        {
+            "key": "ring tone",
+            "label": "Ringtone ID (1-5)",
+            "type": "choice",
+            "options": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5"
+            ]
+        },
+        {
+            "key": "web language",
+            "label": "Web Interface Language (1=Fr, 0=En)",
             "type": "choice",
             "options": [
                 "1",
@@ -94,72 +158,38 @@
         },
         {
             "key": "input language",
-            "label": "Active Input Keyboard",
-            "type": "choice",
-            "options": [
-                "1",
-                "0"
-            ]
+            "label": "Phone Input Language (e.g., French)",
+            "type": "string"
         },
         {
-            "key": "mwi on miss call",
-            "label": "Flash LED on Missed Call",
-            "type": "choice",
-            "options": [
-                "0",
-                "1"
-            ]
+            "key": "sip dial plan",
+            "label": "Dial Plan Rules (Use | to separate)",
+            "type": "string"
         },
         {
-            "key": "mwi on vmail",
-            "label": "Flash LED on Voicemail",
-            "type": "choice",
-            "options": [
-                "1",
-                "0"
-            ]
+            "key": "handset volume",
+            "label": "Handset Volume (1-10)",
+            "type": "string"
         },
         {
-            "key": "missed call indicator",
-            "label": "On-Screen Missed Alert Window",
-            "type": "choice",
-            "options": [
-                "0",
-                "1"
-            ]
+            "key": "speaker volume",
+            "label": "Speaker Volume (1-10)",
+            "type": "string"
         },
         {
-            "key": "ring led flash rate",
-            "label": "Ringing LED Rhythm Cadence",
-            "type": "choice",
-            "options": [
-                "1",
-                "2",
-                "3",
-                "4"
-            ]
+            "key": "ringer volume",
+            "label": "Ringer Volume (1-10)",
+            "type": "string"
         },
         {
-            "key": "mwi led flash rate",
-            "label": "Voicemail LED Rhythm Cadence",
-            "type": "choice",
-            "options": [
-                "1",
-                "2",
-                "3",
-                "4"
-            ]
+            "key": "directory 1 name",
+            "label": "Directory Display Name (e.g., Entreprise)",
+            "type": "string"
         },
         {
-            "key": "hold led flash rate",
-            "label": "On-Hold LED Rhythm Cadence",
-            "type": "choice",
-            "options": [
-                "1",
-                "2",
-                "3",
-                "4"
-            ]
+            "key": "directory 1",
+            "label": "Directory File / URI (e.g., contacts.csv)",
+            "type": "string"
         }
     ]
 }

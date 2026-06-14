@@ -1,30 +1,284 @@
 {
     "model": "6863i",
-    "description": "Mitel 6863i SIP Phone",
+    "description": "Mitel 6863i Configuration",
     "settings": [
         {
-            "key": "sip line1 screen name",
-            "label": "Line 1 Screen Name",
-            "type": "string"
-        },
-        {
-            "key": "sip line1 auth name",
-            "label": "Line 1 Auth Name",
-            "type": "string"
-        },
-        {
-            "key": "prgkey1 type",
+            "key": "pnhkeypad1 type",
             "label": "Prog Key 1 Type",
             "type": "choice",
             "options": [
                 "none",
+                "pickup",
                 "speeddial",
-                "blf"
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
             ]
         },
         {
-            "key": "prgkey1 value",
-            "label": "Prog Key 1 Value",
+            "key": "pnhkeypad1 prepend",
+            "label": "Prog Key 1 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad1 value",
+            "label": "Prog Key 1 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad1 line",
+            "label": "Prog Key 1 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad2 type",
+            "label": "Prog Key 2 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad2 prepend",
+            "label": "Prog Key 2 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad2 value",
+            "label": "Prog Key 2 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad2 line",
+            "label": "Prog Key 2 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad3 type",
+            "label": "Prog Key 3 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad3 prepend",
+            "label": "Prog Key 3 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad3 value",
+            "label": "Prog Key 3 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad3 line",
+            "label": "Prog Key 3 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad4 type",
+            "label": "Prog Key 4 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad4 prepend",
+            "label": "Prog Key 4 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad4 value",
+            "label": "Prog Key 4 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad4 line",
+            "label": "Prog Key 4 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad5 type",
+            "label": "Prog Key 5 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad5 prepend",
+            "label": "Prog Key 5 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad5 value",
+            "label": "Prog Key 5 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad5 line",
+            "label": "Prog Key 5 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad6 type",
+            "label": "Prog Key 6 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad6 prepend",
+            "label": "Prog Key 6 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad6 value",
+            "label": "Prog Key 6 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad6 line",
+            "label": "Prog Key 6 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad7 type",
+            "label": "Prog Key 7 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad7 prepend",
+            "label": "Prog Key 7 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad7 value",
+            "label": "Prog Key 7 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad7 line",
+            "label": "Prog Key 7 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad8 type",
+            "label": "Prog Key 8 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad8 prepend",
+            "label": "Prog Key 8 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad8 value",
+            "label": "Prog Key 8 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad8 line",
+            "label": "Prog Key 8 Line (Default 1)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad9 type",
+            "label": "Prog Key 9 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "pickup",
+                "speeddial",
+                "blf",
+                "xml",
+                "line",
+                "dnd",
+                "park",
+                "paging"
+            ]
+        },
+        {
+            "key": "pnhkeypad9 prepend",
+            "label": "Prog Key 9 Prefix",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad9 value",
+            "label": "Prog Key 9 Value (Dest)",
+            "type": "string"
+        },
+        {
+            "key": "pnhkeypad9 line",
+            "label": "Prog Key 9 Line (Default 1)",
             "type": "string"
         }
     ]

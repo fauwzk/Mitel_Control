@@ -6,12 +6,17 @@ import paramiko
 import re
 import subprocess
 import platform
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.client
+import base64
 from PIL import Image, ImageOps
 
 MODEL_DIR = "phone_models"
 TEMP_DIR = tempfile.gettempdir()
 ENDPOINT_FILE = "endpoints.json"
-CUSTOM_FONT_FILE = "Roboto-Regular.ttf"
+CUSTOM_FONT_FILE = "Museo-500.ttf"
 
 def initialize_comprehensive_models():
     if not os.path.exists(MODEL_DIR):
@@ -19,37 +24,95 @@ def initialize_comprehensive_models():
         
     model_generic = {
         "model": "generic",
-        "description": "Global Settings & SIP Stack",
+        "description": "Global SIP & Network Settings",
         "settings": [
-            {"key": "dhcp", "label": "DHCP Enabled", "type": "choice", "options": ["1", "0"]},
-            {"key": "download protocol", "label": "Provisioning Protocol", "type": "choice", "options": ["TFTP", "FTP", "HTTP"]},
-            {"key": "tftp server", "label": "Config Server IP (TFTP)", "type": "string"},
-            {"key": "auto resync mode", "label": "Auto Sync Mode (3=Daily)", "type": "choice", "options": ["3", "2", "1", "0"]},
-            {"key": "auto resync time", "label": "Auto Sync Time (HH:MM)", "type": "string"},
-            {"key": "time server1", "label": "Primary NTP Server", "type": "string"},
-            {"key": "time zone name", "label": "Time Zone String", "type": "string"},
-            {"key": "sip proxy ip", "label": "SIP Proxy (FreePBX)", "type": "string"},
-            {"key": "sip proxy port", "label": "SIP Proxy Port", "type": "string"},
-            {"key": "blf pickup prefix", "label": "BLF Pickup Code", "type": "string"},
-            {"key": "language 1", "label": "Language File Map 1", "type": "string"},
-            {"key": "language", "label": "Active Phone Language", "type": "choice", "options": ["1", "0"]},
-            {"key": "ring led flash rate", "label": "Ringing LED Cadence", "type": "choice", "options": ["1", "2", "3", "4"]},
+            {"key": "dhcp", "label": "DHCP (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
+            {"key": "tftp server", "label": "TFTP Server IP Address", "type": "string"},
+            {"key": "sip line1 screen name", "label": "Screen Label (Line 1)", "type": "string"},
+            {"key": "sip line1 auth name", "label": "SIP Auth Name / Extension", "type": "string"},
+            {"key": "sip line1 password", "label": "SIP Auth Password", "type": "string"},
+            {"key": "sip line1 user name", "label": "SIP User Name (Display)", "type": "string"},
+            {"key": "sip line1 proxy ip", "label": "SIP Proxy / PBX IP", "type": "string"},
+            {"key": "sip line1 proxy port", "label": "SIP Proxy Port (Default 5060)", "type": "string"},
+            {"key": "sip line1 registrar ip", "label": "Registrar / Server IP", "type": "string"},
+            {"key": "sip line1 registrar port", "label": "Registrar Port (Default 5060)", "type": "string"},
+            {"key": "aastra md5", "label": "Aastra MD5 Config Hash", "type": "string"},
+            {"key": "mac md5", "label": "MAC Config MD5 Hash", "type": "string"},
+            {"key": "time server1", "label": "NTP Time Server (fr.pool.ntp.org)", "type": "string"},
+            {"key": "date format", "label": "Date Format (0=YYYYMMDD, 1=DDMMYYYY, 2=MMDDYYYY, 3=DDMMYY)", "type": "choice", "options": ["0", "1", "2", "3"]},
+            {"key": "time format", "label": "Time Format (1=24H, 0=12H)", "type": "choice", "options": ["0", "1"]},
+            {"key": "contact rcs", "label": "Contact RCS (0=Off, 1=On)", "type": "choice", "options": ["0", "1"]},
+            {"key": "time zone name", "label": "Time Zone String (e.g., CET-1CEST,M3.5.0,M10.5.0)", "type": "string"},
+            {"key": "language 1", "label": "Phone Language file (e.g., French)", "type": "string"},
+            {"key": "language 2", "label": "Phone Language file (e.g., Spanish)", "type": "string"},
+            {"key": "language 3", "label": "Phone Language file (e.g., German)", "type": "string"},
+            {"key": "language", "label": "number of languages (1-3)", "type": "choice", "options": ["1", "2", "3"]},
+            {"key": "tone set", "label": "Region Tone (e.g., France, USA)", "type": "string"},
+            {"key": "ring tone", "label": "Ringtone ID (1-5)", "type": "choice", "options": ["1", "2", "3", "4", "5"]},
+            {"key": "web language", "label": "Web Interface Language (1=Fr, 0=En)", "type": "choice", "options": ["1", "0"]},
+            {"key": "input language", "label": "Phone Input Language (e.g., French)", "type": "string"},
+            {"key": "sip dial plan", "label": "Dial Plan Rules (Use | to separate)", "type": "string"},
+
+            # Audio & Volume
+        {"key": "handset volume", "label": "Handset Volume (1-10)", "type": "string"},
+        {"key": "speaker volume", "label": "Speaker Volume (1-10)", "type": "string"},
+        {"key": "ringer volume", "label": "Ringer Volume (1-10)", "type": "string"},
+
+            # --- NEW DIRECTORY SETTINGS ---
+            {"key": "directory 1 name", "label": "Directory Display Name (e.g., Entreprise)", "type": "string"},
+            {"key": "directory 1", "label": "Directory File / URI (e.g., contacts.csv)", "type": "string"}
         ]
     }
 
-    model_6867i = {
-        "model": "6867i",
-        "description": "Mitel 6867i Color Variant",
-        "settings": [
-            {"key": "sip line1 screen name", "label": "Line 1 Alpha Label", "type": "string"},
-            {"key": "background image", "label": "Wallpaper URL/File", "type": "string"},
-            {"key": "softkey1 type", "label": "Softkey 1 Profile", "type": "choice", "options": ["none", "speeddial", "blf", "xml"]},
-            {"key": "softkey1 label", "label": "Softkey 1 Display Label", "type": "string"},
-            {"key": "softkey1 value", "label": "Softkey 1 Dest Value", "type": "string"}
-        ]
-    }
+    settings_6867i = [
+        {"key": "background image", "label": "Wallpaper Filename (.png/.jpg)", "type": "string"},
+        {"key": "background image display mode", "label": "Wallpaper Scaling (0=Centered, 1=Stretched)", "type": "choice", "options": ["0", "1"]},
+        # Screen Saver Settings
+        {"key": "screen saver background", "label": "Screensaver Image File (.jpg)", "type": "string"},
+        {"key": "screen saver wait time", "label": "Screensaver Timeout (Seconds, default 300)", "type": "string"}
+    ]
 
-    for name, data in [("generic", model_generic), ("6867i", model_6867i)]:
+    # Ensure softkey_types includes all necessary profiles
+    softkey_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
+    
+    # 1. Top Softkeys (using a naming convention that avoids purely numeric keys if desired)
+    for i in range(1, 11):
+        # We include 'prepend' directly here
+        settings_6867i.extend([
+            {"key": f"topsoftkey{i} type", "label": f"Top Key {i} Type", "type": "choice", "options": softkey_types},
+            {"key": f"topsoftkey{i} label", "label": f"Top Key {i} Display Label", "type": "string"},
+            {"key": f"topsoftkey{i} value", "label": f"Top Key {i} Value (Prepend + Dest)", "type": "string"}
+        ])
+
+    # 2. Bottom Softkeys
+    for i in range(1, 21):
+        settings_6867i.extend([
+            {"key": f"softkey{i} type", "label": f"Key {i} Type", "type": "choice", "options": softkey_types},
+            {"key": f"softkey{i} label", "label": f"Key {i} Display Label", "type": "string"},
+            {"key": f"softkey{i} value", "label": f"Key {i} Value (Prepend + Dest)", "type": "string"}
+        ])
+    
+
+    model_6867i = {"model": "6867i", "description": "Mitel 6867i Configuration", "settings": settings_6867i}
+
+    settings_6863i = [        
+    ]
+
+    # Generate 6863i Programmable Hard Keys (pnhkeypad 1 through 9)
+    pnh_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
+    
+    for i in range(1, 10):
+        settings_6863i.extend([
+            {"key": f"pnhkeypad{i} type", "label": f"Prog Key {i} Type", "type": "choice", "options": pnh_types},
+            {"key": f"pnhkeypad{i} prepend", "label": f"Prog Key {i} Prefix", "type": "string"},
+            {"key": f"pnhkeypad{i} value", "label": f"Prog Key {i} Value (Dest)", "type": "string"},
+            {"key": f"pnhkeypad{i} line", "label": f"Prog Key {i} Line (Default 1)", "type": "string"}
+        ])
+
+    # Add the newly created dictionary
+    model_6863i = {"model": "6863i", "description": "Mitel 6863i Configuration", "settings": settings_6863i}
+
+    for name, data in [("generic", model_generic), ("6867i", model_6867i), ("6863i", model_6863i)]:
         filepath = f"{MODEL_DIR}/{name}.json"
         if not os.path.exists(filepath):
             with open(filepath, "w") as f:
@@ -63,17 +126,25 @@ class MitelStudioApp:
         self.active_ui_elements = {}
         self.current_filename = "macaddress.cfg"
         self.endpoints = []
+        self.wallpaper_picker_triggered_by = None
         
         self.load_schemas()
         self.load_endpoints()
 
     def load_schemas(self):
+        self.available_models.clear()
         if not os.path.exists(MODEL_DIR): return
         with open(f"{MODEL_DIR}/generic.json", "r") as f:
             self.generic_schema = json.load(f)
         for file in os.listdir(MODEL_DIR):
             if file.endswith(".json") and file != "generic.json":
                 self.available_models.append(file.replace(".json", ""))
+
+    def refresh_schemas(self):
+        self.load_schemas()
+        dpg.configure_item("model_combo", items=self.available_models)
+        dpg.set_value("status_text", "JSON schemas reloaded successfully.")
+        self.build_dynamic_form()
 
     def on_model_select(self, sender, app_data):
         with open(f"{MODEL_DIR}/{app_data}.json", "r") as f:
@@ -95,9 +166,13 @@ class MitelStudioApp:
 
                 with dpg.group(parent=parent_group, horizontal=True):
                     dpg.add_text(f"{label}:", color=[160, 210, 255])
+                    dpg.add_spacer(width=10)
                     if stype == "string":
                         tag = dpg.add_input_text(default_value=default_val, width=260)
                         self.active_ui_elements[key] = tag
+                        
+
+                            
                     elif stype == "choice":
                         options = setting.get("options", [])
                         if default_val not in options and options: default_val = options[0]
@@ -109,10 +184,46 @@ class MitelStudioApp:
             render_fields(self.current_schema.get("settings", []), "model_settings_group")
 
     def generate_cfg_string(self):
-        lines = [f"# Provisioning Profile"]
+        vals = {}
+        prepends = {}
+        
+        # Gather all current values from the UI
         for key, tag in self.active_ui_elements.items():
             val = dpg.get_value(tag)
-            if val != "": lines.append(f"{key}: {val}")
+            if "prepend" in key:
+                prepends[key.replace("prepend", "value")] = val
+            else:
+                vals[key] = val
+        
+        # Grab the server IP dynamically from the SFTP window's "Host IP" field
+        server_ip = dpg.get_value("ftp_host")
+        
+        lines = ["# Provisioning Profile"]
+        
+        for key in sorted(vals.keys()):
+            val = vals[key]
+            if val != "":
+                # 1. Handle Softkey Prepend Logic
+                if key in prepends and prepends[key] != "":
+                    lines.append(f"{key}: {prepends[key]}{val}")
+                
+                # 2. Auto-Format HTTP for Images (Mitel often rejects TFTP for images)
+                elif key in ["background image", "screen saver background image"]:
+                    if not val.startswith("http://") and not val.startswith("https://") and not val.startswith("tftp://"):
+                        lines.append(f"{key}: http://{server_ip}/{val}")
+                    else:
+                        lines.append(f"{key}: {val}")
+                        
+                # 3. Auto-Format TFTP for the Directory (Since it is in /tftpboot)
+                elif key == "directory 1":
+                    if not val.startswith("http://") and not val.startswith("https://") and not val.startswith("tftp://"):
+                        lines.append(f"{key}: tftp://{server_ip}/{val}")
+                    else:
+                        lines.append(f"{key}: {val}")
+                # 3. Standard Key-Value Pairs
+                else:
+                    lines.append(f"{key}: {val}")
+
         return "\n".join(lines) + "\n"
 
     def parse_cfg_file(self, filepath):
@@ -139,22 +250,19 @@ class MitelStudioApp:
             dpg.set_value("status_text", "Saved configuration locally.")
         except Exception as e: dpg.set_value("status_text", f"Local write error: {e}")
 
-    # --- Utility: Format MAC to Filename ---
     def format_mac_to_filename(self):
         raw_input = dpg.get_value("current_file_input")
-        # Strip everything except hex characters
-        clean_mac = re.sub(r'[^a-fA-F0-9]', '', raw_input).lower()
+        # Ensure only alphanumeric characters are kept
+        clean_mac = re.sub(r'[^a-fA-F0-9]', '', raw_input).upper() # Changed .lower() to .upper()
         if len(clean_mac) >= 12:
-            # Take the first 12 valid hex chars just in case
             clean_mac = clean_mac[:12]
             new_filename = f"{clean_mac}.cfg"
             self.current_filename = new_filename
             dpg.set_value("current_file_input", new_filename)
             dpg.set_value("status_text", f"Formatted filename: {new_filename}")
         else:
-            dpg.set_value("status_text", "Please enter a valid MAC address to format.")
+            dpg.set_value("status_text", "Please enter a valid MAC address.")
 
-    # --- SFTP Connection Logic (Paramiko) ---
     def get_sftp_client(self):
         host = dpg.get_value("ftp_host")
         user = dpg.get_value("ftp_user")
@@ -206,6 +314,16 @@ class MitelStudioApp:
         except Exception as e: 
             dpg.set_value("status_text", f"Upload execution error: {e}")
 
+    def trigger_config_wallpaper_picker(self, sender, app_data, user_data):
+        self.wallpaper_picker_triggered_by = user_data
+        dpg.show_item("config_wallpaper_dialog")
+
+    def config_wallpaper_pick_cb(self, sender, app_data):
+        filename = os.path.basename(app_data['file_path_name'])
+        dpg.set_value(self.wallpaper_picker_triggered_by, filename)
+        dpg.set_value("status_text", f"Config image set to: {filename}")
+        self.wallpaper_picker_triggered_by = None
+
     def process_and_upload_wallpaper(self, sender, app_data):
         local_image_path = app_data['file_path_name']
         target_name = "fond_leger.png"
@@ -225,7 +343,6 @@ class MitelStudioApp:
         except Exception as e:
             dpg.set_value("status_text", f"Image Pipeline Error: {e}")
 
-    # --- ARP MAC Lookup Logic ---
     def fetch_mac_from_ip(self):
         ip = dpg.get_value("inv_ip_input").strip()
         if not ip:
@@ -234,15 +351,12 @@ class MitelStudioApp:
             
         dpg.set_value("status_text", f"Pinging {ip} to populate ARP table...")
         try:
-            # 1. Ping the device so the OS registers it in the ARP cache
             ping_cmd = ['ping', '-n', '1', ip] if platform.system().lower() == 'windows' else ['ping', '-c', '1', '-W', '1', ip]
             subprocess.run(ping_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
-            # 2. Query the ARP table for that specific IP
             arp_cmd = ['arp', '-a', ip] if platform.system().lower() == 'windows' else ['arp', '-n', ip]
             output = subprocess.check_output(arp_cmd, universal_newlines=True)
             
-            # 3. Use Regex to extract the MAC address
             mac_match = re.search(r'([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})', output)
             if mac_match:
                 found_mac = mac_match.group(0).replace('-', ':').upper()
@@ -253,7 +367,51 @@ class MitelStudioApp:
         except Exception as e:
             dpg.set_value("status_text", f"ARP Lookup failed: {e}")
 
-    # --- Manual Endpoint Inventory Logic ---
+    # --- Bulletproof Reboot Function ---
+    def reboot_selected_phone(self):
+        selected = dpg.get_value("inventory_list")
+        if not selected or selected == "No endpoints added yet.":
+            dpg.set_value("status_text", "Please select a phone from the inventory to reboot.")
+            return
+        
+        ip_match = re.search(r'\]\s*([0-9\.]+)\s*-', selected)
+        if not ip_match:
+            dpg.set_value("status_text", "Could not extract IP from selection.")
+            return
+            
+        ip = ip_match.group(1).strip()
+        pwd = dpg.get_value("phone_web_pass")
+        
+        dpg.set_value("status_text", f"Sending URL-encoded XML payload to {ip}...")
+        
+        # Proper URL Encoding to satisfy the Aastra web server
+        xml_string = '<AastraIPPhoneExecute><ExecuteItem URI="Command: Reset"/></AastraIPPhoneExecute>'
+        data = urllib.parse.urlencode({'xml': xml_string}).encode('utf-8')
+        
+        url = f"http://{ip}/"
+        
+        try:
+            req = urllib.request.Request(url, data=data)
+            base64string = base64.b64encode(f"admin:{pwd}".encode('utf-8')).decode('utf-8')
+            req.add_header("Authorization", f"Basic {base64string}")
+            req.add_header("Content-Type", "application/x-www-form-urlencoded")
+            
+            urllib.request.urlopen(req, timeout=3)
+            dpg.set_value("status_text", f"Reboot command acknowledged by {ip}!")
+            
+        except (http.client.RemoteDisconnected, ConnectionResetError):
+            # The phone successfully cut the line to reboot itself
+            dpg.set_value("status_text", f"Success: {ip} dropped connection (Phone is restarting!)")
+            
+        except urllib.error.URLError as e:
+            if "closed" in str(e).lower() or "reset" in str(e).lower() or "10054" in str(e):
+                 dpg.set_value("status_text", f"Success: {ip} dropped connection (Phone is restarting!)")
+            else:
+                 dpg.set_value("status_text", f"Failed to reboot {ip} (Check Whitelist/IP/Pass): {e}")
+                 
+        except Exception as e:
+            dpg.set_value("status_text", f"Failed to reboot {ip}: {e}")
+
     def load_endpoints(self):
         if os.path.exists(ENDPOINT_FILE):
             try:
@@ -316,11 +474,68 @@ class MitelStudioApp:
 initialize_comprehensive_models()
 app = MitelStudioApp()
 dpg.create_context()
-dpg.configure_app(docking=True, docking_space=True)
+dpg.configure_app(
+    docking=True, 
+    docking_space=True, 
+    init_file="dpg.ini", 
+    auto_save_init_file=True
+)
+
+# --- START OF MITEL COLOR THEME ---
+with dpg.theme() as mitel_theme:
+    with dpg.theme_component(dpg.mvAll):
+        # Backgrounds: Dark Slate 
+        dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (28, 33, 40, 255)) 
+        dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (28, 33, 40, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_PopupBg, (35, 40, 48, 255))
+
+        # Title Bars: Mitel Corporate Blue
+        dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (0, 80, 154, 255)) 
+        dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (0, 114, 206, 255)) # Mitel Accent Blue
+        dpg.add_theme_color(dpg.mvThemeCol_TitleBgCollapsed, (0, 50, 100, 255))
+        
+        # Buttons: Subtle grey resting, Mitel Blue hovered
+        dpg.add_theme_color(dpg.mvThemeCol_Button, (45, 50, 58, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (0, 114, 206, 255)) 
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (0, 80, 154, 255))
+        
+        # Input Fields (Frames): Darker inlay
+        dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (18, 22, 28, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (0, 114, 206, 100))
+        dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (0, 114, 206, 150))
+        
+        # Tabs
+        dpg.add_theme_color(dpg.mvThemeCol_Tab, (0, 80, 154, 150))
+        dpg.add_theme_color(dpg.mvThemeCol_TabHovered, (0, 114, 206, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_TabActive, (0, 80, 154, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_TabUnfocused, (0, 50, 100, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_TabUnfocusedActive, (0, 80, 154, 255))
+        
+        # Lists and Dropdowns (Headers)
+        dpg.add_theme_color(dpg.mvThemeCol_Header, (0, 114, 206, 120))
+        dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (0, 114, 206, 200))
+        dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (0, 80, 154, 255))
+        
+        # Borders and Separators
+        dpg.add_theme_color(dpg.mvThemeCol_Border, (60, 65, 75, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_Separator, (60, 65, 75, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_SeparatorHovered, (0, 114, 206, 255))
+        dpg.add_theme_color(dpg.mvThemeCol_SeparatorActive, (0, 80, 154, 255))
+        
+        # Styling: Round the edges slightly for a modern, polished look
+        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 4)
+        dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 6)
+        dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 4)
+        dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 4)
+        dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 4)
+
+# Apply the theme globally to the application
+dpg.bind_theme(mitel_theme)
+# --- END OF MITEL COLOR THEME ---
 
 with dpg.font_registry():
     if os.path.exists(CUSTOM_FONT_FILE):
-        custom_font = dpg.add_font(CUSTOM_FONT_FILE, 16)
+        custom_font = dpg.add_font(CUSTOM_FONT_FILE, 12)
         dpg.bind_font(custom_font)
 
 with dpg.viewport_menu_bar():
@@ -338,14 +553,19 @@ with dpg.file_dialog(directory_selector=False, show=False, callback=app.local_sa
     dpg.add_file_extension(".cfg")
 with dpg.file_dialog(directory_selector=False, show=False, callback=app.process_and_upload_wallpaper, tag="wallpaper_dialog", width=500, height=350):
     dpg.add_file_extension(".jpg")
+    dpg.add_file_extension(".png")
+
+with dpg.file_dialog(directory_selector=False, show=False, callback=app.config_wallpaper_pick_cb, tag="config_wallpaper_dialog", width=500, height=350):
+    dpg.add_file_extension(".png", color=(0, 255, 0, 255))
+    dpg.add_file_extension(".jpg", color=(0, 255, 0, 255))
 
 # --- Window 1: Configuration Studio ---
 with dpg.window(label="Endpoint Configuration Studio", tag="config_window", width=580, height=620):
     with dpg.group(horizontal=True):
         dpg.add_text("Target Phone Type:")
-        dpg.add_combo(items=app.available_models, callback=app.on_model_select, width=160)
+        dpg.add_combo(items=app.available_models, callback=app.on_model_select, width=160, tag="model_combo")
+        dpg.add_button(label="Refresh JSON", callback=app.refresh_schemas)
     with dpg.group(horizontal=True):
-        # Allow user to paste a raw MAC and format it directly into a filename
         dpg.add_input_text(tag="current_file_input", default_value="Paste MAC here...", width=160)
         dpg.add_button(label="Format MAC -> .cfg", callback=app.format_mac_to_filename)
         dpg.add_button(label="Push via SFTP", callback=app.ftp_upload)
@@ -356,7 +576,6 @@ with dpg.window(label="Endpoint Configuration Studio", tag="config_window", widt
             with dpg.child_window(tag="generic_settings_group", height=-40): pass
             
         with dpg.tab(label="Model Specific Options"):
-            # Added the missing model container here to prevent the container stack crash
             with dpg.child_window(tag="model_settings_group", height=-40): pass
             
     dpg.add_separator()
@@ -380,7 +599,7 @@ with dpg.window(label="Endpoint Inventory Manager", tag="inventory_window", widt
     with dpg.group(horizontal=True):
         dpg.add_text("IP:   ")
         dpg.add_input_text(tag="inv_ip_input", width=150)
-        dpg.add_button(label="<- Auto-Fetch MAC", callback=app.fetch_mac_from_ip) # Native ARP query
+        dpg.add_button(label="<- Auto-Fetch MAC", callback=app.fetch_mac_from_ip)
         
     with dpg.group(horizontal=True):
         dpg.add_text("MAC:  ")
@@ -397,13 +616,18 @@ with dpg.window(label="Endpoint Inventory Manager", tag="inventory_window", widt
     dpg.add_separator()
     dpg.add_text("Saved Devices (Click to setup file):")
     dpg.add_listbox(items=[], tag="inventory_list", num_items=8, width=-1, callback=app.on_inventory_select)
+    
+    dpg.add_separator()
+    with dpg.group(horizontal=True):
+        dpg.add_input_text(label="Phone Web Password", tag="phone_web_pass", default_value="22222", password=True, width=100)
+        dpg.add_button(label="Reboot Selected Phone", callback=app.reboot_selected_phone)
 
 # --- Window 4: Image Loader ---
 with dpg.window(label="Asset Image Loader", tag="wallpaper_window", width=380, height=130, pos=[600, 490]):
     dpg.add_text("Auto-converts to 320x240 & pushes via SFTP")
     dpg.add_button(label="Select & Upload Wallpaper...", callback=lambda: dpg.show_item("wallpaper_dialog"), width=-1)
 
-dpg.create_viewport(title='Mitel Setup Studio v6', width=1450, height=720)
+dpg.create_viewport(title='Mitel Config Manager', width=1680, height=720)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 

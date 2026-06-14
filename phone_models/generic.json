@@ -1,0 +1,165 @@
+{
+    "model": "generic",
+    "description": "Global Settings & SIP Stack",
+    "settings": [
+        {
+            "key": "dhcp",
+            "label": "DHCP Enabled",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "tftp server",
+            "label": "Configuration Server IP",
+            "type": "string"
+        },
+        {
+            "key": "time server1",
+            "label": "Primary NTP Server",
+            "type": "string"
+        },
+        {
+            "key": "time server2",
+            "label": "Secondary NTP Server",
+            "type": "string"
+        },
+        {
+            "key": "time zone name",
+            "label": "Time Zone String",
+            "type": "string"
+        },
+        {
+            "key": "sip proxy ip",
+            "label": "SIP Proxy (FreePBX)",
+            "type": "string"
+        },
+        {
+            "key": "sip proxy port",
+            "label": "SIP Proxy Port",
+            "type": "string"
+        },
+        {
+            "key": "sip registrar ip",
+            "label": "SIP Registrar IP",
+            "type": "string"
+        },
+        {
+            "key": "directed call pickup",
+            "label": "Directed Call Pickup",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "blf pickup prefix",
+            "label": "BLF Pickup Code (FreePBX)",
+            "type": "string"
+        },
+        {
+            "key": "lldp",
+            "label": "LLDP Execution",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "language 1",
+            "label": "Language File Map 1",
+            "type": "string"
+        },
+        {
+            "key": "language",
+            "label": "Active Phone Language",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "webpage language",
+            "label": "Active Web UI Language",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "input language",
+            "label": "Active Input Keyboard",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "mwi on miss call",
+            "label": "Flash LED on Missed Call",
+            "type": "choice",
+            "options": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "key": "mwi on vmail",
+            "label": "Flash LED on Voicemail",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "missed call indicator",
+            "label": "On-Screen Missed Alert Window",
+            "type": "choice",
+            "options": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "key": "ring led flash rate",
+            "label": "Ringing LED Rhythm Cadence",
+            "type": "choice",
+            "options": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        },
+        {
+            "key": "mwi led flash rate",
+            "label": "Voicemail LED Rhythm Cadence",
+            "type": "choice",
+            "options": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        },
+        {
+            "key": "hold led flash rate",
+            "label": "On-Hold LED Rhythm Cadence",
+            "type": "choice",
+            "options": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ]
+        }
+    ]
+}

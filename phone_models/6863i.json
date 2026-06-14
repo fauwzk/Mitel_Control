@@ -1,0 +1,31 @@
+{
+    "model": "6863i",
+    "description": "Mitel 6863i SIP Phone",
+    "settings": [
+        {
+            "key": "sip line1 screen name",
+            "label": "Line 1 Screen Name",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 auth name",
+            "label": "Line 1 Auth Name",
+            "type": "string"
+        },
+        {
+            "key": "prgkey1 type",
+            "label": "Prog Key 1 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "speeddial",
+                "blf"
+            ]
+        },
+        {
+            "key": "prgkey1 value",
+            "label": "Prog Key 1 Value",
+            "type": "string"
+        }
+    ]
+}

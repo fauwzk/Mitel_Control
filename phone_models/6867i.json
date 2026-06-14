@@ -1,0 +1,52 @@
+{
+    "model": "6867i",
+    "description": "Mitel 6867i SIP Phone",
+    "settings": [
+        {
+            "key": "sip line1 screen name",
+            "label": "Line 1 Screen Name",
+            "type": "string"
+        },
+        {
+            "key": "sip line1 auth name",
+            "label": "Line 1 Auth Name",
+            "type": "string"
+        },
+        {
+            "key": "softkey1 type",
+            "label": "Softkey 1 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "speeddial",
+                "blf",
+                "xml"
+            ]
+        },
+        {
+            "key": "softkey1 value",
+            "label": "Softkey 1 Value",
+            "type": "string"
+        },
+        {
+            "key": "prgkey1 type",
+            "label": "Prog Key 1 Type",
+            "type": "choice",
+            "options": [
+                "none",
+                "speeddial",
+                "blf"
+            ]
+        },
+        {
+            "key": "topsoftkey1 type",
+            "label": "Top Softkey 1",
+            "type": "choice",
+            "options": [
+                "none",
+                "speeddial",
+                "blf"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+name: Build Mitel Studio Release
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: 
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller dearpygui paramiko pillow
+
+    - name: Build App with PyInstaller (Directory Mode)
+      run: |
+        # --noconfirm: Overwrite existing build folders
+        # --windowed: Hide the black command prompt terminal
+        # --add-data: Bundle your font into the folder
+        # Notice: --onefile is removed
+        pyinstaller --noconfirm --windowed --add-data "Roboto-Regular.ttf;." --name "MitelSetupStudio" main.py
+
+    - name: Zip the Application Folder
+      run: |
+        # PyInstaller creates the folder inside the 'dist' directory.
+        # This PowerShell command zips that entire folder.
+        Compress-Archive -Path dist/MitelSetupStudio -DestinationPath MitelSetupStudio-Windows.zip
+
+    - name: Upload ZIP Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MitelSetupStudio-Release
+        path: MitelSetupStudio-Windows.zip

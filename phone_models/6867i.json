@@ -17,13 +17,13 @@
             ]
         },
         {
-            "key": "screen saver background",
+            "key": "screen saver background image",
             "label": "Screensaver Image File (.jpg)",
             "type": "string"
         },
         {
-            "key": "screen saver wait time",
-            "label": "Screensaver Timeout (Seconds, default 300)",
+            "key": "screen saver timer",
+            "label": "Screensaver Timeout (Seconds, e.g., 15)",
             "type": "string"
         },
         {

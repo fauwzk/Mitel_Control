@@ -67,9 +67,8 @@ def initialize_comprehensive_models():
     settings_6867i = [
         {"key": "background image", "label": "Wallpaper Filename (.png/.jpg)", "type": "string"},
         {"key": "background image display mode", "label": "Wallpaper Scaling (0=Centered, 1=Stretched)", "type": "choice", "options": ["0", "1"]},
-        # Screen Saver Settings
-        {"key": "screen saver background", "label": "Screensaver Image File (.jpg)", "type": "string"},
-        {"key": "screen saver wait time", "label": "Screensaver Timeout (Seconds, default 300)", "type": "string"}
+        {"key": "screen saver background image", "label": "Screensaver Image File (.jpg)", "type": "string"},
+        {"key": "screen saver timer", "label": "Screensaver Timeout (Seconds, e.g., 15)", "type": "string"}
     ]
 
     # Ensure softkey_types includes all necessary profiles

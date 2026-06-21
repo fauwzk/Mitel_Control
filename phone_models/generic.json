@@ -12,6 +12,15 @@
             ]
         },
         {
+            "key": "lldp",
+            "label": "LLDP (1=On, 0=Off)",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
             "key": "tftp server",
             "label": "TFTP Server IP Address",
             "type": "string"
@@ -164,6 +173,20 @@
         {
             "key": "sip dial plan",
             "label": "Dial Plan Rules (Use | to separate)",
+            "type": "string"
+        },
+        {
+            "key": "directed call pickup",
+            "label": "Directed Call Pickup (1=On, 0=Off)",
+            "type": "choice",
+            "options": [
+                "1",
+                "0"
+            ]
+        },
+        {
+            "key": "directed call pickup prefix",
+            "label": "Directed Call Pickup Prefix (e.g., **)",
             "type": "string"
         },
         {

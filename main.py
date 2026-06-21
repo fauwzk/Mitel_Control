@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.error
 import http.client
 import base64
+
 from PIL import Image, ImageOps
 
 MODEL_DIR = "phone_models"
@@ -27,6 +28,7 @@ def initialize_comprehensive_models():
         "description": "Global SIP & Network Settings",
         "settings": [
             {"key": "dhcp", "label": "DHCP (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
+            {"key": "lldp", "label": "LLDP (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
             {"key": "tftp server", "label": "TFTP Server IP Address", "type": "string"},
             {"key": "sip line1 screen name", "label": "Screen Label (Line 1)", "type": "string"},
             {"key": "sip line1 auth name", "label": "SIP Auth Name / Extension", "type": "string"},
@@ -52,11 +54,12 @@ def initialize_comprehensive_models():
             {"key": "web language", "label": "Web Interface Language (1=Fr, 0=En)", "type": "choice", "options": ["1", "0"]},
             {"key": "input language", "label": "Phone Input Language (e.g., French)", "type": "string"},
             {"key": "sip dial plan", "label": "Dial Plan Rules (Use | to separate)", "type": "string"},
-
+            {"key": "directed call pickup", "label": "Directed Call Pickup (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
+            {"key": "directed call pickup prefix", "label": "Directed Call Pickup Prefix (e.g., **)", "type": "string"},
             # Audio & Volume
-        {"key": "handset volume", "label": "Handset Volume (1-10)", "type": "string"},
-        {"key": "speaker volume", "label": "Speaker Volume (1-10)", "type": "string"},
-        {"key": "ringer volume", "label": "Ringer Volume (1-10)", "type": "string"},
+            {"key": "handset volume", "label": "Handset Volume (1-10)", "type": "string"},
+            {"key": "speaker volume", "label": "Speaker Volume (1-10)", "type": "string"},
+            {"key": "ringer volume", "label": "Ringer Volume (1-10)", "type": "string"},
 
             # --- NEW DIRECTORY SETTINGS ---
             {"key": "directory 1 name", "label": "Directory Display Name (e.g., Entreprise)", "type": "string"},

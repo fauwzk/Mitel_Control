@@ -56,12 +56,9 @@ def initialize_comprehensive_models():
             {"key": "sip dial plan", "label": "Dial Plan Rules (Use | to separate)", "type": "string"},
             {"key": "directed call pickup", "label": "Directed Call Pickup (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
             {"key": "directed call pickup prefix", "label": "Directed Call Pickup Prefix (e.g., **)", "type": "string"},
-            # Audio & Volume
             {"key": "handset volume", "label": "Handset Volume (1-10)", "type": "string"},
             {"key": "speaker volume", "label": "Speaker Volume (1-10)", "type": "string"},
             {"key": "ringer volume", "label": "Ringer Volume (1-10)", "type": "string"},
-
-            # --- NEW DIRECTORY SETTINGS ---
             {"key": "directory 1 name", "label": "Directory Display Name (e.g., Entreprise)", "type": "string"},
             {"key": "directory 1", "label": "Directory File / URI (e.g., contacts.csv)", "type": "string"}
         ]
@@ -74,19 +71,15 @@ def initialize_comprehensive_models():
         {"key": "screen saver timer", "label": "Screensaver Timeout (Seconds, e.g., 15)", "type": "string"}
     ]
 
-    # Ensure softkey_types includes all necessary profiles
     softkey_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
     
-    # 1. Top Softkeys (using a naming convention that avoids purely numeric keys if desired)
     for i in range(1, 11):
-        # We include 'prepend' directly here
         settings_6867i.extend([
             {"key": f"topsoftkey{i} type", "label": f"Top Key {i} Type", "type": "choice", "options": softkey_types},
             {"key": f"topsoftkey{i} label", "label": f"Top Key {i} Display Label", "type": "string"},
             {"key": f"topsoftkey{i} value", "label": f"Top Key {i} Value (Prepend + Dest)", "type": "string"}
         ])
 
-    # 2. Bottom Softkeys
     for i in range(1, 21):
         settings_6867i.extend([
             {"key": f"softkey{i} type", "label": f"Key {i} Type", "type": "choice", "options": softkey_types},
@@ -94,13 +87,9 @@ def initialize_comprehensive_models():
             {"key": f"softkey{i} value", "label": f"Key {i} Value (Prepend + Dest)", "type": "string"}
         ])
     
-
     model_6867i = {"model": "6867i", "description": "Mitel 6867i Configuration", "settings": settings_6867i}
 
-    settings_6863i = [        
-    ]
-
-    # Generate 6863i Programmable Hard Keys (pnhkeypad 1 through 9)
+    settings_6863i = []
     pnh_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
     
     for i in range(1, 10):
@@ -111,7 +100,6 @@ def initialize_comprehensive_models():
             {"key": f"pnhkeypad{i} line", "label": f"Prog Key {i} Line (Default 1)", "type": "string"}
         ])
 
-    # Add the newly created dictionary
     model_6863i = {"model": "6863i", "description": "Mitel 6863i Configuration", "settings": settings_6863i}
 
     for name, data in [("generic", model_generic), ("6867i", model_6867i), ("6863i", model_6863i)]:
@@ -159,9 +147,13 @@ class MitelStudioApp:
         dpg.delete_item("model_settings_group", children_only=True)
         self.active_ui_elements.clear()
 
+        # Track which keys map successfully to UI elements
+        processed_keys = set()
+
         def render_fields(schema_settings, parent_group):
             for setting in schema_settings:
                 key = setting["key"]
+                processed_keys.add(key)
                 label = setting["label"]
                 stype = setting["type"]
                 default_val = loaded_data.get(key, "")
@@ -172,9 +164,6 @@ class MitelStudioApp:
                     if stype == "string":
                         tag = dpg.add_input_text(default_value=default_val, width=260)
                         self.active_ui_elements[key] = tag
-                        
-
-                            
                     elif stype == "choice":
                         options = setting.get("options", [])
                         if default_val not in options and options: default_val = options[0]
@@ -184,6 +173,31 @@ class MitelStudioApp:
         render_fields(self.generic_schema.get("settings", []), "generic_settings_group")
         if self.current_schema:
             render_fields(self.current_schema.get("settings", []), "model_settings_group")
+
+        # Capture mapped and unmapped lines for the Text Editor
+        mapped_lines = []
+        unmapped_lines = []
+        for k, v in loaded_data.items():
+            if k in processed_keys:
+                mapped_lines.append(f"{k}: {v}")
+            else:
+                unmapped_lines.append(f"[CUSTOM] {k}: {v}")
+                
+        # Build the structured text for the editor
+        if dpg.does_item_exist("raw_config_editor"):
+            editor_text = "# --- STANDARD SETTINGS (Edit these via the UI Tabs) ---\n"
+            editor_text += "# Note: Edits to standard settings in this box are ignored on save.\n"
+            if mapped_lines:
+                editor_text += "\n".join(mapped_lines) + "\n"
+                
+            editor_text += "\n# --- CUSTOM SETTINGS (Editable) ---\n"
+            editor_text += "# Note: Keep the [CUSTOM] tag so the app knows to save these.\n"
+            if unmapped_lines:
+                editor_text += "\n".join(unmapped_lines) + "\n"
+            else:
+                editor_text += "[CUSTOM] new_variable: value\n"
+                
+            dpg.set_value("raw_config_editor", editor_text)
 
     def generate_cfg_string(self):
         vals = {}
@@ -197,34 +211,44 @@ class MitelStudioApp:
             else:
                 vals[key] = val
         
-        # Grab the server IP dynamically from the SFTP window's "Host IP" field
         server_ip = dpg.get_value("ftp_host")
-        
         lines = ["# Provisioning Profile"]
         
+        # 1. Process Standard UI Mapped Variables
         for key in sorted(vals.keys()):
             val = vals[key]
             if val != "":
-                # 1. Handle Softkey Prepend Logic
                 if key in prepends and prepends[key] != "":
                     lines.append(f"{key}: {prepends[key]}{val}")
-                
-                # 2. Auto-Format HTTP for Images (Mitel often rejects TFTP for images)
                 elif key in ["background image", "screen saver background image"]:
                     if not val.startswith("http://") and not val.startswith("https://") and not val.startswith("tftp://"):
                         lines.append(f"{key}: http://{server_ip}/{val}")
                     else:
                         lines.append(f"{key}: {val}")
-                        
-                # 3. Auto-Format TFTP for the Directory (Since it is in /tftpboot)
                 elif key == "directory 1":
                     if not val.startswith("http://") and not val.startswith("https://") and not val.startswith("tftp://"):
                         lines.append(f"{key}: tftp://{server_ip}/{val}")
                     else:
                         lines.append(f"{key}: {val}")
-                # 3. Standard Key-Value Pairs
                 else:
                     lines.append(f"{key}: {val}")
+
+        # 2. Process Custom Variables from the Text Editor
+        if dpg.does_item_exist("raw_config_editor"):
+            raw_text = dpg.get_value("raw_config_editor")
+            custom_lines_found = False
+            for rline in raw_text.split('\n'):
+                rline = rline.strip()
+                # Only grab lines explicitly marked as custom
+                if rline.startswith("[CUSTOM]"):
+                    if not custom_lines_found:
+                        lines.append("\n# Custom / Unmapped Settings")
+                        custom_lines_found = True
+                    
+                    # Strip the visual tag before saving to the actual .cfg file
+                    clean_line = rline.replace("[CUSTOM]", "", 1).strip()
+                    if clean_line:
+                        lines.append(clean_line)
 
         return "\n".join(lines) + "\n"
 
@@ -239,26 +263,20 @@ class MitelStudioApp:
                         key, val = line.split(':', 1)
                         parsed_data[key.strip()] = val.strip()
 
-            # --- START AUTO-DETECT LOGIC ---
             detected_model = None
             for key in parsed_data.keys():
-                # If it has softkeys, it's the larger screen 6867i
                 if key.startswith("softkey") or key.startswith("topsoftkey"):
                     detected_model = "6867i"
                     break
-                # If it uses Programmable Hard Keys, it's the 6863i
                 elif key.startswith("pnhkeypad"):
                     detected_model = "6863i"
                     break
             
-            # If a model was detected, update the UI and load the correct schema
             if detected_model and detected_model in self.available_models:
                 dpg.set_value("model_combo", detected_model)
                 with open(f"{MODEL_DIR}/{detected_model}.json", "r") as schema_file:
                     self.current_schema = json.load(schema_file)
-            # --- END AUTO-DETECT LOGIC ---
 
-            # Build the form using the newly selected schema and populate the data
             self.build_dynamic_form(loaded_data=parsed_data)
             
             self.current_filename = os.path.basename(filepath)
@@ -281,8 +299,7 @@ class MitelStudioApp:
 
     def format_mac_to_filename(self):
         raw_input = dpg.get_value("current_file_input")
-        # Ensure only alphanumeric characters are kept
-        clean_mac = re.sub(r'[^a-fA-F0-9]', '', raw_input).upper() # Changed .lower() to .upper()
+        clean_mac = re.sub(r'[^a-fA-F0-9]', '', raw_input).upper()
         if len(clean_mac) >= 12:
             clean_mac = clean_mac[:12]
             new_filename = f"{clean_mac}.cfg"
@@ -396,7 +413,6 @@ class MitelStudioApp:
         except Exception as e:
             dpg.set_value("status_text", f"ARP Lookup failed: {e}")
 
-    # --- Bulletproof Reboot Function ---
     def reboot_selected_phone(self):
         selected = dpg.get_value("inventory_list")
         if not selected or selected == "No endpoints added yet.":
@@ -413,7 +429,6 @@ class MitelStudioApp:
         
         dpg.set_value("status_text", f"Sending URL-encoded XML payload to {ip}...")
         
-        # Proper URL Encoding to satisfy the Aastra web server
         xml_string = '<AastraIPPhoneExecute><ExecuteItem URI="Command: Reset"/></AastraIPPhoneExecute>'
         data = urllib.parse.urlencode({'xml': xml_string}).encode('utf-8')
         
@@ -429,7 +444,6 @@ class MitelStudioApp:
             dpg.set_value("status_text", f"Reboot command acknowledged by {ip}!")
             
         except (http.client.RemoteDisconnected, ConnectionResetError):
-            # The phone successfully cut the line to reboot itself
             dpg.set_value("status_text", f"Success: {ip} dropped connection (Phone is restarting!)")
             
         except urllib.error.URLError as e:
@@ -499,7 +513,6 @@ class MitelStudioApp:
             dpg.set_value("current_file_input", clean_filename)
             dpg.set_value("status_text", f"Target file set to: {clean_filename}")
 
-
 initialize_comprehensive_models()
 app = MitelStudioApp()
 dpg.create_context()
@@ -510,57 +523,39 @@ dpg.configure_app(
     auto_save_init_file=True
 )
 
-# --- START OF MITEL COLOR THEME ---
 with dpg.theme() as mitel_theme:
     with dpg.theme_component(dpg.mvAll):
-        # Backgrounds: Dark Slate 
         dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (28, 33, 40, 255)) 
         dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (28, 33, 40, 255))
         dpg.add_theme_color(dpg.mvThemeCol_PopupBg, (35, 40, 48, 255))
-
-        # Title Bars: Mitel Corporate Blue
         dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (0, 80, 154, 255)) 
-        dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (0, 114, 206, 255)) # Mitel Accent Blue
+        dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (0, 114, 206, 255))
         dpg.add_theme_color(dpg.mvThemeCol_TitleBgCollapsed, (0, 50, 100, 255))
-        
-        # Buttons: Subtle grey resting, Mitel Blue hovered
         dpg.add_theme_color(dpg.mvThemeCol_Button, (45, 50, 58, 255))
         dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (0, 114, 206, 255)) 
         dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (0, 80, 154, 255))
-        
-        # Input Fields (Frames): Darker inlay
         dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (18, 22, 28, 255))
         dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (0, 114, 206, 100))
         dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (0, 114, 206, 150))
-        
-        # Tabs
         dpg.add_theme_color(dpg.mvThemeCol_Tab, (0, 80, 154, 150))
         dpg.add_theme_color(dpg.mvThemeCol_TabHovered, (0, 114, 206, 255))
         dpg.add_theme_color(dpg.mvThemeCol_TabActive, (0, 80, 154, 255))
         dpg.add_theme_color(dpg.mvThemeCol_TabUnfocused, (0, 50, 100, 255))
         dpg.add_theme_color(dpg.mvThemeCol_TabUnfocusedActive, (0, 80, 154, 255))
-        
-        # Lists and Dropdowns (Headers)
         dpg.add_theme_color(dpg.mvThemeCol_Header, (0, 114, 206, 120))
         dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (0, 114, 206, 200))
         dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (0, 80, 154, 255))
-        
-        # Borders and Separators
         dpg.add_theme_color(dpg.mvThemeCol_Border, (60, 65, 75, 255))
         dpg.add_theme_color(dpg.mvThemeCol_Separator, (60, 65, 75, 255))
         dpg.add_theme_color(dpg.mvThemeCol_SeparatorHovered, (0, 114, 206, 255))
         dpg.add_theme_color(dpg.mvThemeCol_SeparatorActive, (0, 80, 154, 255))
-        
-        # Styling: Round the edges slightly for a modern, polished look
         dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 4)
         dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 6)
         dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 4)
         dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 4)
         dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 4)
 
-# Apply the theme globally to the application
 dpg.bind_theme(mitel_theme)
-# --- END OF MITEL COLOR THEME ---
 
 with dpg.font_registry():
     if os.path.exists(CUSTOM_FONT_FILE):
@@ -588,7 +583,6 @@ with dpg.file_dialog(directory_selector=False, show=False, callback=app.config_w
     dpg.add_file_extension(".png", color=(0, 255, 0, 255))
     dpg.add_file_extension(".jpg", color=(0, 255, 0, 255))
 
-# --- Window 1: Configuration Studio ---
 with dpg.window(label="Endpoint Configuration Studio", tag="config_window", width=580, height=620):
     with dpg.group(horizontal=True):
         dpg.add_text("Target Phone Type:")
@@ -607,10 +601,13 @@ with dpg.window(label="Endpoint Configuration Studio", tag="config_window", widt
         with dpg.tab(label="Model Specific Options"):
             with dpg.child_window(tag="model_settings_group", height=-40): pass
             
+        with dpg.tab(label="Raw / Custom Settings"):
+            dpg.add_text("Variables not mapped to the UI schemas appear here.")
+            dpg.add_input_text(multiline=True, tag="raw_config_editor", width=-1, height=-40)
+            
     dpg.add_separator()
     dpg.add_text("Ready", tag="status_text")
 
-# --- Window 2: SFTP Sync (SSH native) ---
 with dpg.window(label="SFTP Server Sync", tag="ftp_window", width=380, height=420, pos=[600, 40]):
     dpg.add_input_text(label="Host IP", tag="ftp_host", default_value="10.19.13.1", width=180)
     dpg.add_input_text(label="SSH User", tag="ftp_user", default_value="root", width=180)
@@ -621,7 +618,6 @@ with dpg.window(label="SFTP Server Sync", tag="ftp_window", width=380, height=42
     dpg.add_listbox(items=[], tag="ftp_file_list", num_items=12, width=-1)
     dpg.add_button(label="Download Selected File", callback=app.ftp_download, width=-1)
 
-# --- Window 3: Endpoint Inventory ---
 with dpg.window(label="Endpoint Inventory Manager", tag="inventory_window", width=420, height=350, pos=[990, 40]):
     dpg.add_text("Local Handset Database", color=[100, 200, 255])
     
@@ -651,7 +647,6 @@ with dpg.window(label="Endpoint Inventory Manager", tag="inventory_window", widt
         dpg.add_input_text(label="Phone Web Password", tag="phone_web_pass", default_value="22222", password=True, width=100)
         dpg.add_button(label="Reboot Selected Phone", callback=app.reboot_selected_phone)
 
-# --- Window 4: Image Loader ---
 with dpg.window(label="Asset Image Loader", tag="wallpaper_window", width=380, height=130, pos=[600, 490]):
     dpg.add_text("Auto-converts to 320x240 & pushes via SFTP")
     dpg.add_button(label="Select & Upload Wallpaper...", callback=lambda: dpg.show_item("wallpaper_dialog"), width=-1)

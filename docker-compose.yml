@@ -5,10 +5,13 @@ services:
     container_name: mitel-control
     restart: unless-stopped
     environment:
-      VNC_PASSWORD: ${VNC_PASSWORD:?Définir VNC_PASSWORD dans .env}
+      APP_PASSWORD: ${APP_PASSWORD:?Définir APP_PASSWORD dans .env}
+      SECRET_KEY: ${SECRET_KEY:?Définir SECRET_KEY dans .env}
+      # Mettre à 1 derrière un reverse proxy HTTPS
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
       TZ: Europe/Paris
     ports:
-      - "6080:6080"
+      - "8000:8000"
     volumes:
       - mitel-data:/data
     # "Auto-Fetch MAC" (ARP) ne fonctionne que sur le même réseau L2 que les téléphones :

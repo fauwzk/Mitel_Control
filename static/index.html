@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mitel Config Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <h1>Mitel Config Manager</h1>
+    <div class="topbar-actions">
+        <button type="button" id="regen-models" class="ghost">Force Regenerate JSON Models</button>
+        <form method="post" action="/logout" id="logout-form" hidden>
+            <button type="submit" class="ghost">Logout</button>
+        </form>
+    </div>
+</header>
+
+<main class="layout">
+    <section class="panel studio">
+        <h2>Endpoint Configuration Studio</h2>
+
+        <div class="toolbar">
+            <label class="inline">Target Phone Type
+                <select id="model-select"><option value="">— generic only —</option></select>
+            </label>
+            <button type="button" id="refresh-schemas">Refresh JSON</button>
+            <span class="spacer"></span>
+            <label class="button-like">Load File
+                <input type="file" id="load-file" accept=".cfg,.txt" hidden>
+            </label>
+            <button type="button" id="save-file">Save File</button>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="current-file" placeholder="Paste MAC here..." aria-label="Target filename">
+            <button type="button" id="format-mac">Format MAC → .cfg</button>
+            <button type="button" id="push-sftp" class="primary">Push via SFTP</button>
+            <span class="spacer"></span>
+            <input type="search" id="field-filter" placeholder="Filter settings…" aria-label="Filter settings">
+        </div>
+
+        <nav class="tabs" role="tablist">
+            <button type="button" role="tab" data-tab="generic" class="active">Generic Base Options</button>
+            <button type="button" role="tab" data-tab="model">Model Specific Options</button>
+            <button type="button" role="tab" data-tab="raw">Raw / Custom Settings</button>
+        </nav>
+
+        <div class="tab-panel" data-panel="generic"><div class="fields" id="generic-fields"></div></div>
+        <div class="tab-panel" data-panel="model" hidden>
+            <div class="fields" id="model-fields"></div>
+            <p class="empty" id="model-empty">Select a target phone type to show model-specific options.</p>
+        </div>
+        <div class="tab-panel" data-panel="raw" hidden>
+            <p class="hint">Variables not mapped to the UI schemas appear here.</p>
+            <textarea id="raw-editor" spellcheck="false"></textarea>
+        </div>
+    </section>
+
+    <aside class="side">
+        <section class="panel">
+            <h2>SFTP Server Sync</h2>
+            <div class="form-grid">
+                <label>Host IP <input type="text" id="ftp-host" value="10.19.13.1"></label>
+                <label>SSH User <input type="text" id="ftp-user" value="root" autocomplete="username"></label>
+                <label>SSH Pass <input type="password" id="ftp-pass" autocomplete="current-password"></label>
+                <label>Target Dir <input type="text" id="ftp-path" value="/tftpboot"></label>
+            </div>
+            <button type="button" id="ftp-list" class="block">Connect &amp; List Files</button>
+            <ul class="listbox" id="ftp-files"><li class="placeholder">Not connected.</li></ul>
+            <button type="button" id="ftp-download" class="block">Download Selected File</button>
+        </section>
+
+        <section class="panel">
+            <h2>Endpoint Inventory Manager</h2>
+            <div class="form-grid">
+                <label>IP
+                    <span class="input-row">
+                        <input type="text" id="inv-ip">
+                        <button type="button" id="fetch-mac">Auto-Fetch MAC</button>
+                    </span>
+                </label>
+                <label>MAC <input type="text" id="inv-mac"></label>
+                <label>Label <input type="text" id="inv-label" value="Bureau"></label>
+            </div>
+            <div class="toolbar">
+                <button type="button" id="add-endpoint">Add to Database</button>
+                <button type="button" id="delete-endpoint" class="danger">Delete Selected</button>
+            </div>
+            <p class="hint">Saved Devices (Click to setup file):</p>
+            <ul class="listbox" id="inventory"></ul>
+            <div class="toolbar">
+                <label class="inline">Phone Web Password
+                    <input type="password" id="phone-pass" value="22222" class="short" autocomplete="off">
+                </label>
+                <button type="button" id="reboot-phone">Reboot Selected Phone</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Asset Image Loader</h2>
+            <p class="hint">Auto-converts to 320x240 &amp; pushes via SFTP as fond_leger.png</p>
+            <label class="button-like block">Select &amp; Upload Wallpaper…
+                <input type="file" id="wallpaper-file" accept=".png,.jpg,.jpeg" hidden>
+            </label>
+        </section>
+    </aside>
+</main>
+
+<footer class="statusbar" id="status" role="status" aria-live="polite">Ready</footer>
+</body>
+</html>

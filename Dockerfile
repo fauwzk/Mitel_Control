@@ -1,31 +1,21 @@
 FROM python:3.12-slim
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    DISPLAY=:99 \
-    SCREEN_WIDTH=1680 \
-    SCREEN_HEIGHT=720 \
-    NOVNC_PORT=6080 \
+ENV PYTHONUNBUFFERED=1 \
     DATA_DIR=/data
 
-# Xvfb (écran virtuel) + Mesa (OpenGL logiciel pour DearPyGui) + x11vnc/noVNC (accès navigateur)
 # iputils-ping / net-tools : nécessaires à "Auto-Fetch MAC" (ping + arp)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        xvfb x11vnc novnc websockify \
-        libgl1 libglx-mesa0 libgl1-mesa-dri libegl1 \
-        libxrandr2 libxinerama1 libxcursor1 libxi6 libxkbcommon-x11-0 \
-        iputils-ping net-tools \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html
+RUN apt-get update && apt-get install -y --no-install-recommends iputils-ping net-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py Museo-500.ttf dpg.ini endpoints.json docker-entrypoint.sh ./
-RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
+COPY app.py mitel_core.py endpoints.json ./
+COPY static ./static
 
 VOLUME ["/data"]
-EXPOSE 6080
+EXPOSE 8000
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Un seul worker : l'inventaire est un fichier JSON protégé par un verrou en mémoire
+CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "60", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "app:app"]

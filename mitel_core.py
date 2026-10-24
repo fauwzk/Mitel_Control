@@ -19,6 +19,8 @@ from contextlib import contextmanager
 import paramiko
 from PIL import Image, ImageOps
 
+from phone_schemas import SCHEMA_VERSION, builtin_schemas
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
 MODEL_DIR = os.path.join(DATA_DIR, "phone_models")
@@ -35,107 +37,25 @@ class OpError(Exception):
 # --- Schémas de modèles ------------------------------------------------------
 
 def initialize_comprehensive_models(force=False):
-    if force and os.path.isdir(MODEL_DIR):
-        for f in os.listdir(MODEL_DIR):
-            if f.endswith(".json"):
-                os.remove(os.path.join(MODEL_DIR, f))
+    """Écrit les schémas intégrés dans MODEL_DIR.
+
+    Un fichier existant est conservé, sauf s'il date d'une version de schéma plus ancienne
+    (il est alors sauvegardé en .bak puis remplacé) ou si force=True.
+    """
     os.makedirs(MODEL_DIR, exist_ok=True)
-
-    model_generic = {
-        "model": "generic",
-        "description": "Global SIP & Network Settings",
-        "settings": [
-            {"key": "dhcp", "label": "DHCP (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
-            {"key": "lldp", "label": "LLDP (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
-            {"key": "tftp server", "label": "TFTP Server IP Address", "type": "string"},
-            {"key": "sip line1 screen name", "label": "Screen Label (Line 1)", "type": "string"},
-            {"key": "sip line1 auth name", "label": "SIP Auth Name / Extension", "type": "string"},
-            {"key": "sip line1 password", "label": "SIP Auth Password", "type": "string"},
-            {"key": "sip line1 user name", "label": "SIP User Name (Display)", "type": "string"},
-            {"key": "sip line1 proxy ip", "label": "SIP Proxy / PBX IP", "type": "string"},
-            {"key": "sip line1 proxy port", "label": "SIP Proxy Port (Default 5060)", "type": "string"},
-            {"key": "sip line1 registrar ip", "label": "Registrar / Server IP", "type": "string"},
-            {"key": "sip line1 registrar port", "label": "Registrar Port (Default 5060)", "type": "string"},
-            {"key": "aastra md5", "label": "Aastra MD5 Config Hash", "type": "string"},
-            {"key": "mac md5", "label": "MAC Config MD5 Hash", "type": "string"},
-            {"key": "time server1", "label": "NTP Time Server (fr.pool.ntp.org)", "type": "string"},
-            {"key": "date format", "label": "Date Format (0=YYYYMMDD, 1=DDMMYYYY, 2=MMDDYYYY, 3=DDMMYY)", "type": "choice", "options": ["0", "1", "2", "3"]},
-            {"key": "time format", "label": "Time Format (1=24H, 0=12H)", "type": "choice", "options": ["0", "1"]},
-            {"key": "contact rcs", "label": "Contact RCS (0=Off, 1=On)", "type": "choice", "options": ["0", "1"]},
-            {"key": "time zone name", "label": "Time Zone String (e.g., CET-1CEST,M3.5.0,M10.5.0)", "type": "string"},
-            {"key": "language 1", "label": "Phone Language file (e.g., French)", "type": "string"},
-            {"key": "language 2", "label": "Phone Language file (e.g., Spanish)", "type": "string"},
-            {"key": "language 3", "label": "Phone Language file (e.g., German)", "type": "string"},
-            {"key": "language", "label": "number of languages (1-3)", "type": "choice", "options": ["1", "2", "3"]},
-            {"key": "tone set", "label": "Region Tone (e.g., France, USA)", "type": "string"},
-            {"key": "ring tone", "label": "Ringtone ID (1-5)", "type": "choice", "options": ["1", "2", "3", "4", "5"]},
-            {"key": "web language", "label": "Web Interface Language (1=Fr, 0=En)", "type": "choice", "options": ["1", "0"]},
-            {"key": "input language", "label": "Phone Input Language (e.g., French)", "type": "string"},
-            {"key": "sip dial plan", "label": "Dial Plan Rules (Use | to separate)", "type": "string"},
-            {"key": "directed call pickup", "label": "Directed Call Pickup (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
-            {"key": "directed call pickup prefix", "label": "Directed Call Pickup Prefix (e.g., **)", "type": "string"},
-            {"key": "handset volume", "label": "Handset Volume (1-10)", "type": "string"},
-            {"key": "speaker volume", "label": "Speaker Volume (1-10)", "type": "string"},
-            {"key": "ringer volume", "label": "Ringer Volume (1-10)", "type": "string"},
-            {"key": "directory 1 name", "label": "Directory Display Name (e.g., Entreprise)", "type": "string"},
-            {"key": "directory 1", "label": "Directory File / URI (e.g., contacts.csv)", "type": "string"}
-        ]
-    }
-
-    settings_6867i = [
-        {"key": "background image", "label": "Wallpaper Filename (.png/.jpg)", "type": "string"},
-        {"key": "background image display mode", "label": "Wallpaper Scaling (0=Centered, 1=Stretched)", "type": "choice", "options": ["0", "1"]},
-
-        # --- Écran de veille et rétroéclairage ---
-        {"key": "screen saver timer", "label": "Screensaver Timeout (Seconds, e.g., 300, 0=Off)", "type": "string"},
-        {"key": "screen saver background image", "label": "Screensaver Custom Image (.jpg)", "type": "string"},
-        {"key": "backlight mode", "label": "Backlight Mode (0=Off, 1=Auto, 2=Always On)", "type": "choice", "options": ["0", "1", "2"]},
-        {"key": "bl on time", "label": "Backlight Auto Dim Timeout (Seconds, e.g., 600)", "type": "string"},
-        {"key": "inactivity brightness level", "label": "Dimmed Brightness (0=Black, 1 to 5=Dimmed)", "type": "choice", "options": ["0", "1", "2", "3", "4", "5"]},
-
-        # --- LEDs Principales ---
-        {"key": "mwi led", "label": "Message Waiting LED (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
-        {"key": "ring led", "label": "Ringing LED Indicator (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
-        {"key": "dnd led", "label": "DND LED Indicator (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]}
-    ]
-
-    softkey_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
-
-    for i in range(1, 11):
-        settings_6867i.extend([
-            {"key": f"topsoftkey{i} type", "label": f"Top Key {i} Type", "type": "choice", "options": softkey_types},
-            {"key": f"topsoftkey{i} label", "label": f"Top Key {i} Display Label", "type": "string"},
-            {"key": f"topsoftkey{i} value", "label": f"Top Key {i} Value (Prepend + Dest)", "type": "string"},
-            {"key": f"topsoftkey{i} color", "label": f"Top Key {i} LED Color", "type": "choice", "options": ["", "red", "green", "yellow"]}
-        ])
-
-    for i in range(1, 21):
-        settings_6867i.extend([
-            {"key": f"softkey{i} type", "label": f"Key {i} Type", "type": "choice", "options": softkey_types},
-            {"key": f"softkey{i} label", "label": f"Key {i} Display Label", "type": "string"},
-            {"key": f"softkey{i} value", "label": f"Key {i} Value (Prepend + Dest)", "type": "string"}
-        ])
-
-    model_6867i = {"model": "6867i", "description": "Mitel 6867i Configuration", "settings": settings_6867i}
-
-    settings_6863i = []
-    pnh_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
-
-    for i in range(1, 10):
-        settings_6863i.extend([
-            {"key": f"pnhkeypad{i} type", "label": f"Prog Key {i} Type", "type": "choice", "options": pnh_types},
-            {"key": f"pnhkeypad{i} prepend", "label": f"Prog Key {i} Prefix", "type": "string"},
-            {"key": f"pnhkeypad{i} value", "label": f"Prog Key {i} Value (Dest)", "type": "string"},
-            {"key": f"pnhkeypad{i} line", "label": f"Prog Key {i} Line (Default 1)", "type": "string"}
-        ])
-
-    model_6863i = {"model": "6863i", "description": "Mitel 6863i Configuration", "settings": settings_6863i}
-
-    for name, data in [("generic", model_generic), ("6867i", model_6867i), ("6863i", model_6863i)]:
+    for name, data in builtin_schemas().items():
         filepath = os.path.join(MODEL_DIR, f"{name}.json")
-        if not os.path.exists(filepath):
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
+        if os.path.exists(filepath) and not force:
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    current = json.load(f).get("version", 1)
+            except Exception:
+                current = 0
+            if current >= SCHEMA_VERSION:
+                continue
+            shutil.copy(filepath, filepath + ".bak")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
 
 
 def initialize_data():
@@ -172,8 +92,8 @@ def generate_cfg_string(values, raw_text, server_ip):
 
     lines = ["# Provisioning Profile"]
 
-    # 1. Variables standards issues du formulaire
-    for key in sorted(vals.keys()):
+    # 1. Variables standards issues du formulaire (dans l'ordre du schéma)
+    for key in vals:
         val = vals[key]
         if val == "":
             continue
@@ -207,7 +127,31 @@ def generate_cfg_string(values, raw_text, server_ip):
     return "\n".join(lines) + "\n"
 
 
-def parse_cfg_text(text):
+def _strip_comment(val):
+    # Un "#" hors guillemets commence un commentaire (un "#" entre guillemets est un dièse)
+    in_quotes = False
+    for i, c in enumerate(val):
+        if c == '"':
+            in_quotes = not in_quotes
+        elif c == "#" and not in_quotes:
+            return val[:i].strip()
+    return val.strip()
+
+
+def _model_from_inventory(filename):
+    mac = re.sub(r"[^0-9A-F]", "", (filename or "").upper())[:12]
+    if len(mac) != 12:
+        return None
+    for ep in load_endpoints():
+        if re.sub(r"[^0-9A-F]", "", ep.get("mac", "").upper()) == mac:
+            label = ep.get("label", "").lower()
+            for model in list_models():
+                if model.lower().rstrip("i") in label:
+                    return model
+    return None
+
+
+def parse_cfg_text(text, filename=None):
     parsed_data = {}
     for line in text.splitlines():
         line = line.strip()
@@ -215,16 +159,18 @@ def parse_cfg_text(text):
             continue
         if ":" in line:
             key, val = line.split(":", 1)
-            parsed_data[key.strip()] = val.strip()
+            parsed_data[key.strip()] = _strip_comment(val)
 
-    detected_model = None
-    for key in parsed_data:
-        if key.startswith("softkey") or key.startswith("topsoftkey"):
-            detected_model = "6867i"
-            break
-        elif key.startswith("pnhkeypad"):
+    # Le modèle déclaré dans l'inventaire (libellé du poste) prime sur la détection par clés
+    detected_model = _model_from_inventory(filename)
+    if not detected_model:
+        keys = list(parsed_data)
+        if any(k.startswith("hardkey") for k in keys):
+            detected_model = "6920"
+        elif any(k.startswith("prgkey") for k in keys):
             detected_model = "6863i"
-            break
+        elif any(k.startswith(("softkey", "topsoftkey", "expmod")) for k in keys):
+            detected_model = "6867i"
     if detected_model not in list_models():
         detected_model = None
 

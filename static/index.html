@@ -28,6 +28,7 @@
             </label>
             <button type="button" id="refresh-schemas">Refresh JSON</button>
             <span class="spacer"></span>
+            <button type="button" id="new-config" class="danger">New</button>
             <label class="button-like">Load File
                 <input type="file" id="load-file" accept=".cfg,.txt" hidden>
             </label>
@@ -42,16 +43,30 @@
             <input type="search" id="field-filter" placeholder="Filter settings…" aria-label="Filter settings">
         </div>
 
+        <p class="hint" id="model-description"></p>
+
         <nav class="tabs" role="tablist">
-            <button type="button" role="tab" data-tab="generic" class="active">Generic Base Options</button>
-            <button type="button" role="tab" data-tab="model">Model Specific Options</button>
+            <button type="button" role="tab" data-tab="generic" class="active">Global Settings <span class="badge" id="badge-generic"></span></button>
+            <button type="button" role="tab" data-tab="lines">Lines <span class="badge" id="badge-lines"></span></button>
+            <button type="button" role="tab" data-tab="keys">Keys <span class="badge" id="badge-keys"></span></button>
+            <button type="button" role="tab" data-tab="model">Model Options <span class="badge" id="badge-model"></span></button>
             <button type="button" role="tab" data-tab="raw">Raw / Custom Settings</button>
         </nav>
 
-        <div class="tab-panel" data-panel="generic"><div class="fields" id="generic-fields"></div></div>
+        <div class="tab-panel" data-panel="generic"><div id="generic-fields"></div></div>
+        <div class="tab-panel" data-panel="lines" hidden>
+            <div class="chips" id="line-chips"></div>
+            <div id="line-fields"></div>
+        </div>
+        <div class="tab-panel" data-panel="keys" hidden>
+            <div class="chips" id="key-group-chips"></div>
+            <p class="hint" id="key-group-hint"></p>
+            <div class="table-wrap"><table class="keys-table" id="keys-table"></table></div>
+            <p class="empty" id="keys-empty">Select a target phone type to configure its keys.</p>
+        </div>
         <div class="tab-panel" data-panel="model" hidden>
-            <div class="fields" id="model-fields"></div>
-            <p class="empty" id="model-empty">Select a target phone type to show model-specific options.</p>
+            <div id="model-fields"></div>
+            <p class="empty" id="model-empty">No model-specific options for this phone type.</p>
         </div>
         <div class="tab-panel" data-panel="raw" hidden>
             <p class="hint">Variables not mapped to the UI schemas appear here.</p>

@@ -124,8 +124,9 @@ def parse_config():
     upload = request.files.get("file")
     if not upload:
         raise core.OpError("No file received.")
-    parsed, model = core.parse_cfg_text(upload.read().decode("utf-8", errors="replace"))
-    return jsonify(data=parsed, model=model, filename=core.safe_filename(upload.filename))
+    name = core.safe_filename(upload.filename)
+    parsed, model = core.parse_cfg_text(upload.read().decode("utf-8", errors="replace"), name)
+    return jsonify(data=parsed, model=model, filename=name)
 
 
 @app.post("/api/sftp/list")
@@ -140,7 +141,7 @@ def sftp_list():
 def sftp_download():
     data = body()
     name = core.safe_filename(data.get("name"))
-    parsed, model = core.parse_cfg_text(core.sftp_read(sftp_creds(data), data.get("path", ""), name))
+    parsed, model = core.parse_cfg_text(core.sftp_read(sftp_creds(data), data.get("path", ""), name), name)
     return jsonify(data=parsed, model=model, filename=name)
 
 

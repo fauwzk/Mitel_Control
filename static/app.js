@@ -69,64 +69,313 @@ function storageSet(key, value) {
     try { localStorage.setItem(key, value); } catch { /* stockage indisponible */ }
 }
 
-// --- Formulaire dynamique ----------------------------------------------------
+// --- Schémas et clés ---------------------------------------------------------
 
-function currentSettings() {
-    return [...state.generic.settings, ...(state.modelSchema ? state.modelSchema.settings : [])];
+const MAX_LINES = 24;
+const KEY_FIELD_LABELS = { type: "Type", label: "Label", value: "Value", line: "Line", states: "States", locked: "Locked" };
+
+function lineCount() {
+    return state.modelSchema && state.modelSchema.lines ? state.modelSchema.lines : MAX_LINES;
 }
 
-function renderFields(settings, container) {
-    container.replaceChildren();
-    for (const setting of settings) {
-        const field = document.createElement("label");
-        field.className = "field";
-        field.dataset.search = `${setting.label} ${setting.key}`.toLowerCase();
+function keyGroups() {
+    return state.modelSchema && state.modelSchema.key_groups ? state.modelSchema.key_groups : [];
+}
 
-        const title = document.createElement("span");
-        title.textContent = setting.label;
-        const key = document.createElement("small");
-        key.textContent = setting.key;
+function groupKey(group, n, field) {
+    return `${group.pattern.replace("{n}", n)} ${field}`;
+}
 
-        let input;
-        let value = state.values[setting.key] ?? "";
-        if (setting.type === "choice") {
-            const options = setting.options || [];
-            input = document.createElement("select");
-            for (const opt of options) {
-                const o = document.createElement("option");
-                o.value = opt;
-                o.textContent = opt === "" ? "(empty)" : opt;
-                input.append(o);
-            }
-            if (!options.includes(value) && options.length) value = options[0];
-        } else {
-            input = document.createElement("input");
-            input.type = "text";
-        }
-        input.value = value;
-        state.values[setting.key] = value;
-        input.addEventListener("input", () => { state.values[setting.key] = input.value; });
+function lineKey(setting, n) {
+    return setting.key.replace("{n}", n);
+}
 
-        field.append(title, key, input);
-        container.append(field);
+// Liste ordonnée de toutes les clés gérées par l'interface pour le modèle courant
+function allKeys() {
+    const keys = [];
+    for (const s of state.generic.settings) keys.push(s.key);
+    for (const s of (state.modelSchema ? state.modelSchema.settings || [] : [])) keys.push(s.key);
+    for (let n = 1; n <= lineCount(); n++) {
+        for (const s of state.generic.line_settings || []) keys.push(lineKey(s, n));
     }
-}
-
-function buildForm() {
-    renderFields(state.generic.settings, $("#generic-fields"));
-    renderFields(state.modelSchema ? state.modelSchema.settings : [], $("#model-fields"));
-    $("#model-empty").hidden = Boolean(state.modelSchema && state.modelSchema.settings.length);
-    applyFilter();
+    for (const g of keyGroups()) {
+        for (let n = 1; n <= g.count; n++) for (const f of g.fields) keys.push(groupKey(g, n, f));
+    }
+    return keys;
 }
 
 function collectValues() {
     const values = {};
-    for (const s of currentSettings()) values[s.key] = state.values[s.key] ?? "";
+    for (const k of allKeys()) {
+        const v = state.values[k];
+        if (v !== undefined && v !== "") values[k] = v;
+    }
     return values;
 }
 
+const isSet = (key) => state.values[key] !== undefined && state.values[key] !== "";
+
+// --- Champs ------------------------------------------------------------------
+
+function normalizeOptions(options) {
+    return (options || []).map((o) => (typeof o === "object" ? o : { value: o, label: o === "" ? "(empty)" : o }));
+}
+
+let datalistSeq = 0;
+const datalists = new Map();
+
+function datalistFor(values) {
+    const id = values.join("\u0001");
+    if (!datalists.has(id)) {
+        const dl = document.createElement("datalist");
+        dl.id = `dl-${++datalistSeq}`;
+        for (const v of values) dl.append(new Option(v, v));
+        document.body.append(dl);
+        datalists.set(id, dl.id);
+    }
+    return datalists.get(id);
+}
+
+function makeSelect(options, value, onChange) {
+    const select = document.createElement("select");
+    const opts = normalizeOptions(options);
+    if (value !== "" && !opts.some((o) => String(o.value) === value)) {
+        opts.push({ value, label: `${value} (custom)` });
+    }
+    for (const o of opts) select.append(new Option(o.label, o.value));
+    select.value = value;
+    select.addEventListener("change", () => onChange(select.value));
+    return select;
+}
+
+function makeInput(type, value, onChange, { suggestions, placeholder } = {}) {
+    const input = document.createElement("input");
+    input.type = type === "password" ? "password" : "text";
+    input.autocomplete = type === "password" ? "new-password" : "off";
+    input.value = value;
+    if (placeholder) input.placeholder = placeholder;
+    if (suggestions && suggestions.length) input.setAttribute("list", datalistFor(suggestions));
+    input.addEventListener("input", () => onChange(input.value));
+    return input;
+}
+
+function setValue(key, value) {
+    state.values[key] = value;
+    scheduleBadges();
+}
+
+function fieldControl(setting, key) {
+    let value = state.values[key] ?? "";
+    if (setting.type === "choice") {
+        const opts = normalizeOptions(setting.options);
+        // Anciens schémas sans option vide : la première option sert de valeur par défaut
+        if (value === "" && opts.length && !opts.some((o) => o.value === "")) {
+            value = String(opts[0].value);
+            state.values[key] = value;
+        }
+        return makeSelect(setting.options, value, (v) => setValue(key, v));
+    }
+    return makeInput(setting.type, value, (v) => setValue(key, v), { suggestions: setting.suggestions });
+}
+
+function renderField(setting, key) {
+    const field = document.createElement("label");
+    field.className = "field";
+    field.dataset.search = `${setting.label} ${key}`.toLowerCase();
+    field.dataset.key = key;
+
+    const title = document.createElement("span");
+    title.textContent = setting.label;
+    const meta = document.createElement("small");
+    const parts = [key];
+    if (setting.default !== undefined) parts.push(`default ${setting.default}`);
+    meta.textContent = parts.join(" · ");
+    field.append(title, meta, fieldControl(setting, key));
+    if (setting.help) {
+        const help = document.createElement("em");
+        help.textContent = setting.help;
+        field.append(help);
+    }
+    return field;
+}
+
+// Regroupe les paramètres par section dans des blocs repliables
+function renderSections(settings, container, keyOf = (s) => s.key) {
+    container.replaceChildren();
+    const bySection = new Map();
+    for (const s of settings) {
+        const name = s.section || "Settings";
+        if (!bySection.has(name)) bySection.set(name, []);
+        bySection.get(name).push(s);
+    }
+    for (const [name, list] of bySection) {
+        const details = document.createElement("details");
+        details.className = "section";
+        const openKey = `mitel.section.${container.id}.${name}`;
+        details.open = storageGet(openKey) !== "0";
+        details.addEventListener("toggle", () => storageSet(openKey, details.open ? "1" : "0"));
+        const summary = document.createElement("summary");
+        const title = document.createElement("span");
+        title.textContent = name;
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        summary.append(title, badge);
+        const grid = document.createElement("div");
+        grid.className = "fields";
+        for (const s of list) grid.append(renderField(s, keyOf(s)));
+        details.append(summary, grid);
+        container.append(details);
+    }
+}
+
+// --- Onglet Lignes -----------------------------------------------------------
+
+let currentLine = 1;
+
+function renderLines() {
+    if (currentLine > lineCount()) currentLine = 1;
+    const chips = $("#line-chips");
+    chips.replaceChildren();
+    for (let n = 1; n <= lineCount(); n++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = `Line ${n}`;
+        b.dataset.line = n;
+        b.classList.toggle("active", n === currentLine);
+        b.addEventListener("click", () => { currentLine = n; renderLines(); applyFilter(); });
+        chips.append(b);
+    }
+    renderSections(state.generic.line_settings || [], $("#line-fields"), (s) => lineKey(s, currentLine));
+    updateBadges();
+}
+
+// --- Onglet Touches ----------------------------------------------------------
+
+let currentGroup = null;
+
+function rowConfigured(group, n) {
+    return group.fields.some((f) => isSet(groupKey(group, n, f)));
+}
+
+function renderKeys() {
+    const groups = keyGroups();
+    $("#keys-empty").hidden = groups.length > 0;
+    if (!groups.some((g) => g.id === currentGroup)) currentGroup = groups.length ? groups[0].id : null;
+
+    const chips = $("#key-group-chips");
+    chips.replaceChildren();
+    for (const g of groups) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = g.label;
+        b.dataset.group = g.id;
+        b.classList.toggle("active", g.id === currentGroup);
+        b.addEventListener("click", () => { currentGroup = g.id; renderKeys(); });
+        chips.append(b);
+    }
+
+    const table = $("#keys-table");
+    table.replaceChildren();
+    const group = groups.find((g) => g.id === currentGroup);
+    $("#key-group-hint").textContent = group
+        ? `${group.count} keys · parameters "${group.pattern.replace("{n}", "N")} ${group.fields.join(" / ")}"`
+        : "";
+    if (!group) return;
+
+    const head = table.createTHead().insertRow();
+    head.insertCell().textContent = "Key";
+    for (const f of group.fields) head.insertCell().textContent = KEY_FIELD_LABELS[f] || f;
+    const body = table.createTBody();
+    const lineOptions = [{ value: "", label: "—" }, ...Array.from({ length: lineCount() }, (_, i) => String(i + 1))];
+
+    for (let n = 1; n <= group.count; n++) {
+        const row = body.insertRow();
+        const name = group.names && group.names[n] ? `${n} · ${group.names[n]}` : String(n);
+        row.insertCell().textContent = name;
+        for (const f of group.fields) {
+            const key = groupKey(group, n, f);
+            const value = state.values[key] ?? "";
+            const onChange = (v) => { setValue(key, v); row.classList.toggle("configured", rowConfigured(group, n)); };
+            let control;
+            if (f === "type") {
+                control = makeSelect([{ value: "", label: "—" }, ...(group.types || [])], value, onChange);
+            } else if (f === "line") {
+                control = makeSelect(lineOptions, value, onChange);
+            } else if (f === "locked") {
+                control = makeSelect([{ value: "", label: "—" }, { value: "0", label: "No" }, { value: "1", label: "Yes" }],
+                    value, onChange);
+            } else {
+                control = makeInput("string", value, onChange,
+                    f === "states" ? { placeholder: "idle connected incoming outgoing busy" } : {});
+            }
+            control.title = key;
+            control.setAttribute("aria-label", `Key ${name} ${f}`);
+            const cell = row.insertCell();
+            cell.className = `col-${f}`;
+            cell.append(control);
+        }
+        row.classList.toggle("configured", rowConfigured(group, n));
+    }
+    updateBadges();
+}
+
+// --- Compteurs de paramètres renseignés ---------------------------------------
+
+let badgeTimer = null;
+function scheduleBadges() {
+    clearTimeout(badgeTimer);
+    badgeTimer = setTimeout(updateBadges, 150);
+}
+
+function setBadge(el, count) {
+    if (el) el.textContent = count ? String(count) : "";
+}
+
+function updateBadges() {
+    const countSettings = (settings) => settings.filter((s) => isSet(s.key)).length;
+    setBadge($("#badge-generic"), countSettings(state.generic.settings));
+    setBadge($("#badge-model"), countSettings(state.modelSchema ? state.modelSchema.settings || [] : []));
+
+    let lines = 0;
+    for (let n = 1; n <= lineCount(); n++) {
+        const used = (state.generic.line_settings || []).some((s) => isSet(lineKey(s, n)));
+        if (used) lines++;
+        const chip = document.querySelector(`#line-chips [data-line="${n}"]`);
+        if (chip) chip.classList.toggle("has-data", used);
+    }
+    setBadge($("#badge-lines"), lines);
+
+    let keys = 0;
+    for (const g of keyGroups()) {
+        let used = 0;
+        for (let n = 1; n <= g.count; n++) if (rowConfigured(g, n)) used++;
+        keys += used;
+        const chip = document.querySelector(`#key-group-chips [data-group="${g.id}"]`);
+        if (chip) chip.dataset.count = used || "";
+    }
+    setBadge($("#badge-keys"), keys);
+
+    document.querySelectorAll("details.section").forEach((d) => {
+        const n = [...d.querySelectorAll(".field")].filter((f) => isSet(f.dataset.key)).length;
+        setBadge(d.querySelector("summary .badge"), n);
+    });
+}
+
+// --- Construction du formulaire ------------------------------------------------
+
+function buildForm() {
+    renderSections(state.generic.settings, $("#generic-fields"));
+    const modelSettings = state.modelSchema ? state.modelSchema.settings || [] : [];
+    renderSections(modelSettings, $("#model-fields"));
+    $("#model-empty").hidden = modelSettings.length > 0;
+    $("#model-description").textContent = state.modelSchema ? state.modelSchema.description || "" : "";
+    renderLines();
+    renderKeys();
+    applyFilter();
+}
+
 function buildRawEditor(loaded) {
-    const keys = new Set(currentSettings().map((s) => s.key));
+    const keys = new Set(allKeys());
     const mapped = [];
     const unmapped = [];
     for (const [k, v] of Object.entries(loaded)) {
@@ -138,7 +387,7 @@ function buildRawEditor(loaded) {
     if (mapped.length) text += mapped.join("\n") + "\n";
     text += "\n# --- CUSTOM SETTINGS (Editable) ---\n";
     text += "# Note: Keep the [CUSTOM] tag so the app knows to save these.\n";
-    text += unmapped.length ? unmapped.join("\n") + "\n" : "[CUSTOM] new_variable: value\n";
+    text += unmapped.length ? unmapped.join("\n") + "\n" : "# Example: [CUSTOM] new_variable: value\n";
     $("#raw-editor").value = text;
 }
 
@@ -146,6 +395,11 @@ function applyFilter() {
     const q = $("#field-filter").value.trim().toLowerCase();
     document.querySelectorAll(".field").forEach((f) => {
         f.hidden = Boolean(q) && !f.dataset.search.includes(q);
+    });
+    document.querySelectorAll("details.section").forEach((d) => {
+        const visible = [...d.querySelectorAll(".field")].some((f) => !f.hidden);
+        d.hidden = Boolean(q) && !visible;
+        if (q && visible) d.open = true;
     });
 }
 
@@ -170,16 +424,22 @@ async function loadSchemas(data) {
 // Applique un fichier .cfg analysé par le serveur (local ou SFTP)
 async function applyParsedConfig(res, origin) {
     state.values = { ...res.data };
-    await selectModel(res.model || "");
+    await selectModel(res.model || $("#model-select").value);
     buildRawEditor(res.data);
     $("#current-file").value = res.filename;
     setStatus(res.model
-        ? `Loaded ${res.filename} from ${origin}. Auto-detected model: ${res.model}`
-        : `Loaded ${res.filename} from ${origin} (Generic Mode)`, "ok");
+        ? `Loaded ${res.filename} from ${origin}. Detected model: ${res.model}`
+        : `Loaded ${res.filename} from ${origin} (model not detected, keeping current selection)`, "ok");
 }
 
 function configPayload() {
     return { values: collectValues(), raw: $("#raw-editor").value };
+}
+
+// Modèle déduit du libellé d'un poste de l'inventaire (ex. « 6920i » → 6920)
+function modelFromLabel(label) {
+    const l = (label || "").toLowerCase();
+    return state.models.find((m) => l.includes(m.toLowerCase().replace(/i$/, ""))) || null;
 }
 
 // --- Studio ------------------------------------------------------------------
@@ -199,6 +459,14 @@ function initStudio() {
             await loadSchemas(await api("/api/schemas/regenerate", { json: {} }));
             setStatus("JSON models regenerated.", "ok");
         });
+    });
+
+    $("#new-config").addEventListener("click", () => {
+        if (!confirm("Clear every setting of the current configuration?")) return;
+        state.values = {};
+        buildForm();
+        buildRawEditor({});
+        setStatus("New empty configuration.", "ok");
     });
 
     $("#format-mac").addEventListener("click", () => {
@@ -340,7 +608,15 @@ function renderInventory(endpoints) {
             state.inventorySelected = ep;
             const filename = `${ep.mac.replace(/:/g, "").toLowerCase()}.cfg`;
             $("#current-file").value = filename;
-            setStatus(`Target file set to: ${filename}`, "ok");
+            const model = modelFromLabel(ep.label);
+            if (model && model !== $("#model-select").value) {
+                run(null, null, async () => {
+                    await selectModel(model);
+                    setStatus(`Target file set to: ${filename} (model ${model})`, "ok");
+                });
+            } else {
+                setStatus(`Target file set to: ${filename}`, "ok");
+            }
         });
         list.append(li);
     }

@@ -11,7 +11,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py mitel_core.py endpoints.json ./
+COPY app.py mitel_core.py phone_schemas.py endpoints.json ./
 COPY static ./static
 
 VOLUME ["/data"]

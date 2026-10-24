@@ -1,0 +1,19 @@
+services:
+  mitel-control:
+    build: .
+    image: mitel-control:latest
+    container_name: mitel-control
+    restart: unless-stopped
+    environment:
+      VNC_PASSWORD: ${VNC_PASSWORD:?Définir VNC_PASSWORD dans .env}
+      TZ: Europe/Paris
+    ports:
+      - "6080:6080"
+    volumes:
+      - mitel-data:/data
+    # "Auto-Fetch MAC" (ARP) ne fonctionne que sur le même réseau L2 que les téléphones :
+    # remplacer la section "ports" par la ligne suivante (hôte Linux uniquement).
+    # network_mode: host
+
+volumes:
+  mitel-data:

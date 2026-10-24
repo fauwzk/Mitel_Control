@@ -17,7 +17,7 @@ from PIL import Image, ImageOps
 MODEL_DIR = "phone_models"
 TEMP_DIR = tempfile.gettempdir()
 ENDPOINT_FILE = "endpoints.json"
-CUSTOM_FONT_FILE = "Museo-500.ttf"
+CUSTOM_FONT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Museo-500.ttf")
 
 def initialize_comprehensive_models():
     if not os.path.exists(MODEL_DIR):
@@ -67,8 +67,18 @@ def initialize_comprehensive_models():
     settings_6867i = [
         {"key": "background image", "label": "Wallpaper Filename (.png/.jpg)", "type": "string"},
         {"key": "background image display mode", "label": "Wallpaper Scaling (0=Centered, 1=Stretched)", "type": "choice", "options": ["0", "1"]},
-        {"key": "screen saver background image", "label": "Screensaver Image File (.jpg)", "type": "string"},
-        {"key": "screen saver timer", "label": "Screensaver Timeout (Seconds, e.g., 15)", "type": "string"}
+        
+        # --- Écran de veille et rétroéclairage ---
+        {"key": "screen saver timer", "label": "Screensaver Timeout (Seconds, e.g., 300, 0=Off)", "type": "string"},
+        {"key": "screen saver background image", "label": "Screensaver Custom Image (.jpg)", "type": "string"},
+        {"key": "backlight mode", "label": "Backlight Mode (0=Off, 1=Auto, 2=Always On)", "type": "choice", "options": ["0", "1", "2"]},
+        {"key": "bl on time", "label": "Backlight Auto Dim Timeout (Seconds, e.g., 600)", "type": "string"},
+        {"key": "inactivity brightness level", "label": "Dimmed Brightness (0=Black, 1 to 5=Dimmed)", "type": "choice", "options": ["0", "1", "2", "3", "4", "5"]},
+        
+        # --- LEDs Principales ---
+        {"key": "mwi led", "label": "Message Waiting LED (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
+        {"key": "ring led", "label": "Ringing LED Indicator (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]},
+        {"key": "dnd led", "label": "DND LED Indicator (1=On, 0=Off)", "type": "choice", "options": ["1", "0"]}
     ]
 
     softkey_types = ["none", "pickup", "speeddial", "blf", "xml", "line", "dnd", "park", "paging"]
@@ -77,7 +87,8 @@ def initialize_comprehensive_models():
         settings_6867i.extend([
             {"key": f"topsoftkey{i} type", "label": f"Top Key {i} Type", "type": "choice", "options": softkey_types},
             {"key": f"topsoftkey{i} label", "label": f"Top Key {i} Display Label", "type": "string"},
-            {"key": f"topsoftkey{i} value", "label": f"Top Key {i} Value (Prepend + Dest)", "type": "string"}
+            {"key": f"topsoftkey{i} value", "label": f"Top Key {i} Value (Prepend + Dest)", "type": "string"},
+            {"key": f"topsoftkey{i} color", "label": f"Top Key {i} LED Color", "type": "choice", "options": ["", "red", "green", "yellow"]}
         ])
 
     for i in range(1, 21):
@@ -570,6 +581,9 @@ with dpg.viewport_menu_bar():
         dpg.add_menu_item(label="Config Studio", callback=lambda: dpg.show_item("config_window"))
         dpg.add_menu_item(label="SFTP Manager", callback=lambda: dpg.show_item("ftp_window"))
         dpg.add_menu_item(label="Device Inventory", callback=lambda: dpg.show_item("inventory_window"))
+    dpg.add_menu_item(label="Force Regenerate JSON Models", callback=lambda: [
+            os.remove(os.path.join(MODEL_DIR, f)) for f in os.listdir(MODEL_DIR) if f.endswith('.json')
+        ] or initialize_comprehensive_models() or app.refresh_schemas())
 
 with dpg.file_dialog(directory_selector=False, show=False, callback=app.local_open_cb, tag="load_dialog", width=500, height=350):
     dpg.add_file_extension(".cfg")
@@ -651,7 +665,15 @@ with dpg.window(label="Asset Image Loader", tag="wallpaper_window", width=380, h
     dpg.add_text("Auto-converts to 320x240 & pushes via SFTP")
     dpg.add_button(label="Select & Upload Wallpaper...", callback=lambda: dpg.show_item("wallpaper_dialog"), width=-1)
 
-dpg.create_viewport(title='Mitel Config Manager', width=1680, height=720)
+# Overridable via env (used by the Docker image to fill the virtual screen)
+dpg.create_viewport(
+    title='Mitel Config Manager',
+    width=int(os.environ.get("VIEWPORT_WIDTH", 1680)),
+    height=int(os.environ.get("VIEWPORT_HEIGHT", 720)),
+    x_pos=int(os.environ.get("VIEWPORT_X", 100)),
+    y_pos=int(os.environ.get("VIEWPORT_Y", 100)),
+    decorated=os.environ.get("VIEWPORT_DECORATED", "1") != "0"
+)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 

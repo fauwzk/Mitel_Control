@@ -11,7 +11,7 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
       TZ: Europe/Paris
     ports:
-      - "8000:8000"
+      - "8067:8000"
     volumes:
       - mitel-data:/data
     # "Auto-Fetch MAC" (ARP) ne fonctionne que sur le même réseau L2 que les téléphones :

@@ -9,11 +9,11 @@ import posixpath
 import re
 import shutil
 import socket
+import ssl
 import subprocess
 import threading
-import urllib.error
+import time
 import urllib.parse
-import urllib.request
 from contextlib import contextmanager
 
 import paramiko
@@ -263,27 +263,100 @@ def fetch_mac_from_ip(ip):
     return mac_match.group(0).replace("-", ":").upper()
 
 
-def reboot_phone(ip, pwd):
-    ip = _validate_ip(ip)
-    xml_string = '<AastraIPPhoneExecute><ExecuteItem URI="Command: Reset"/></AastraIPPhoneExecute>'
-    data = urllib.parse.urlencode({"xml": xml_string}).encode("utf-8")
+REBOOT_XML = '<AastraIPPhoneExecute><ExecuteItem URI="Command: Reset"/></AastraIPPhoneExecute>'
+REBOOT_CONFIRM_SECONDS = 15
 
-    req = urllib.request.Request(f"http://{ip}/", data=data)
-    token = base64.b64encode(f"admin:{pwd}".encode("utf-8")).decode("utf-8")
-    req.add_header("Authorization", f"Basic {token}")
-    req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
+class _PhoneDropped(Exception):
+    """Le téléphone a coupé la connexion après réception de la requête (il redémarre)."""
+
+
+def _phone_post(ip, scheme, path, fields, pwd):
+    """POST sans suivre les redirections ; renvoie (statut, en-tête Location, IP source vue localement)."""
+    if scheme == "https":
+        # Les téléphones utilisent un certificat auto-signé
+        conn = http.client.HTTPSConnection(ip, timeout=5, context=ssl._create_unverified_context())
+    else:
+        conn = http.client.HTTPConnection(ip, timeout=5)
+    token = base64.b64encode(f"admin:{pwd}".encode("utf-8")).decode("ascii")
+    headers = {"Authorization": f"Basic {token}", "Content-Type": "application/x-www-form-urlencoded"}
     try:
-        urllib.request.urlopen(req, timeout=3)
-        return f"Reboot command acknowledged by {ip}!"
-    except (http.client.RemoteDisconnected, ConnectionResetError):
-        return f"Success: {ip} dropped connection (Phone is restarting!)"
-    except urllib.error.URLError as e:
-        if "closed" in str(e).lower() or "reset" in str(e).lower() or "10054" in str(e):
-            return f"Success: {ip} dropped connection (Phone is restarting!)"
-        raise OpError(f"Failed to reboot {ip} (Check Whitelist/IP/Pass): {e}")
-    except Exception as e:
-        raise OpError(f"Failed to reboot {ip}: {e}")
+        conn.connect()
+        local_ip = conn.sock.getsockname()[0]
+        conn.request("POST", path, body=urllib.parse.urlencode(fields), headers=headers)
+        try:
+            resp = conn.getresponse()
+            resp.read(4096)
+        except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError, socket.timeout):
+            raise _PhoneDropped()
+        return resp.status, resp.getheader("Location", ""), local_ip
+    finally:
+        conn.close()
+
+
+def _phone_reachable(ip):
+    for port in (80, 443):
+        try:
+            with socket.create_connection((ip, port), timeout=1):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _wait_offline(ip, seconds=REBOOT_CONFIRM_SECONDS):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not _phone_reachable(ip):
+            return True
+        time.sleep(1)
+    return False
+
+
+def reboot_phone(ip, pwd):
+    """Redémarre un poste et vérifie qu'il passe réellement hors ligne.
+
+    1. Page « Reset » de l'interface web (authentification admin, reset.html / resetOption=0).
+    2. Push XML « Command: Reset » : le téléphone ne l'exécute que si l'IP émettrice figure dans
+       « xml application post list ».
+    Chaque méthode est tentée en HTTP puis en HTTPS (interface web passée en HTTPS seul).
+    """
+    ip = _validate_ip(ip)
+    if not _phone_reachable(ip):
+        raise OpError(f"{ip} is unreachable from the server (ports 80/443). Check the IP and the network route.")
+
+    methods = [
+        ("web UI reset", "/reset.html", {"resetOption": "0"}),
+        ("XML push", "/", {"xml": REBOOT_XML}),
+    ]
+    attempts = []
+    local_ip = None
+    for name, path, fields in methods:
+        for scheme in ("http", "https"):
+            try:
+                status, location, local_ip = _phone_post(ip, scheme, path, fields, pwd)
+            except _PhoneDropped:
+                status, location = "dropped", ""
+            except OSError as e:
+                attempts.append(f"{name} {scheme}: {e}")
+                continue
+
+            if status == 401:
+                raise OpError(f"{ip} rejected the admin password (HTTP 401). Check the Phone Web Password.")
+            if status in (301, 302, 303, 307, 308):
+                attempts.append(f"{name} {scheme}: redirected to {location or '?'}")
+                continue
+            if status != "dropped" and status >= 400:
+                attempts.append(f"{name} {scheme}: HTTP {status}")
+                break
+            if _wait_offline(ip):
+                return f"{ip} is restarting (confirmed, via {name} over {scheme.upper()})."
+            attempts.append(f"{name} {scheme}: accepted (HTTP {status}) but the phone stayed online")
+            break
+
+    hint = (f" For the XML method, the server's IP must be in the phone's \"xml application post list\""
+            f" (seen locally as {local_ip}; behind Docker NAT, use the Docker host's IP)." if local_ip else "")
+    raise OpError(f"{ip} did not restart. " + "; ".join(attempts) + "." + hint)
 
 
 # --- Inventaire --------------------------------------------------------------

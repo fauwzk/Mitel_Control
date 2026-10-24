@@ -18,4 +18,4 @@ VOLUME ["/data"]
 EXPOSE 8000
 
 # Un seul worker : l'inventaire est un fichier JSON protégé par un verrou en mémoire
-CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "60", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "app:app"]
+CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "120", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "app:app"]
